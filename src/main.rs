@@ -3,12 +3,13 @@ pub mod widget;
 
 use std::io::{stdout, Stdout};
 use std::ops::Drop;
-use std::rc::Rc;
 
 use clap::Parser;
 use crossterm::{event::*, execute, terminal::*};
 use tui::{backend::CrosstermBackend, Terminal};
 use ui::get_ui_tree;
+
+use crate::widget::Node;
 
 pub const DELTA: u64 = 16;
 
@@ -18,7 +19,7 @@ struct Refer {
     filename: Vec<String>,
 }
 
-struct App {
+pub struct App {
     terminal: Terminal<CrosstermBackend<Stdout>>,
 }
 impl App {
@@ -39,13 +40,13 @@ impl App {
         )?;
 
         let size = self.terminal.size()?;
-        let main = Rc::new(get_ui_tree(size, filename));
+        let mut tree = get_ui_tree(size, filename);
 
         loop {
-            self.terminal.draw(|f| ui::ui(f, main.clone()))?;
-            if key_listener()? {
+            if key_listener(&mut tree)? {
                 return Ok(());
             }
+            self.terminal.draw(|f| ui::ui(f, &tree))?;
         }
     }
 }
@@ -63,7 +64,7 @@ impl Drop for App {
     }
 }
 
-fn key_listener() -> anyhow::Result<bool> {
+fn key_listener(_main: &mut Node) -> anyhow::Result<bool> {
     if poll(std::time::Duration::from_millis(DELTA))? {
         match read()? {
             Event::Key(KeyEvent {

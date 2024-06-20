@@ -4,22 +4,28 @@ use tui::{backend::*, layout::*, style::*, terminal::*, widgets::*};
 
 use crate::ui::*;
 
-pub struct Main<'a> {
-    pub file_list: FileList<'a>,
-    pub file_buff: Node<Block<'a>>,
-    pub footers: Vec<Node<Paragraph<'a>>>,
+pub enum Inner {
+    Root,
+    Node(Box<dyn Visit>),
+}
+
+pub struct Node(pub Inner, pub Vec<Node>);
+impl Node {
+    pub fn new<V: 'static + Visit>(inner: V) -> Self {
+        Node(Inner::Node(Box::new(inner)), vec![])
+    }
 }
 
 pub struct FileList<'a> {
     pub _files: Vec<String>,
-    pub file_list: Node<List<'a>>,
+    pub file_list: Item<List<'a>>,
 }
 
 impl<'a> FileList<'a> {
     pub fn new(filename: Vec<String>, size: Rect) -> Self {
         FileList {
             _files: filename.clone(),
-            file_list: Node::new(
+            file_list: Item::new(
                 List::<'a>::new(
                     filename
                         .into_iter()
@@ -40,39 +46,52 @@ impl<'a> FileList<'a> {
     }
 }
 
-pub struct Node<W: Widget + Clone> {
+pub struct Item<W: Widget + Clone> {
     size: Rect,
     widget: W,
 }
 
-impl<W: Widget + Clone> Node<W> {
+impl<W: Widget + Clone> Item<W> {
     pub fn new(widget: W, size: Rect) -> Self {
-        Node { size, widget }
+        Item { size, widget }
     }
 }
 
-pub trait Visit<'a> {
-    fn visit(&self, frame: &mut Frame<'a, CrosstermBackend<Stdout>>);
+pub trait Visit {
+    fn visit(&self, frame: &mut Frame<'_, CrosstermBackend<Stdout>>);
 }
 
-impl<'a> Visit<'a> for Main<'a> {
-    fn visit(&self, frame: &mut Frame<'a, CrosstermBackend<Stdout>>) {
+impl<'a, W: Widget + Clone> Visit for Item<W> {
+    fn visit(&self, frame: &mut Frame<'_, CrosstermBackend<Stdout>>) {
+        frame.render_widget(self.widget.clone(), self.size);
+    }
+}
+
+impl<'a> Visit for FileList<'a> {
+    fn visit(&self, frame: &mut Frame<'_, CrosstermBackend<Stdout>>) {
         self.file_list.visit(frame);
-        self.file_buff.visit(frame);
-        for footer in self.footers.iter() {
+    }
+}
+
+pub struct FootList<'a>(pub Vec<Item<Paragraph<'a>>>);
+
+impl<'a> Visit for FootList<'a> {
+    fn visit(&self, frame: &mut Frame<'_, CrosstermBackend<Stdout>>) {
+        for footer in self.0.iter() {
             footer.visit(frame);
         }
     }
 }
 
-impl<'a, W: Widget + Clone> Visit<'a> for Node<W> {
-    fn visit(&self, frame: &mut Frame<'a, CrosstermBackend<Stdout>>) {
-        frame.render_widget(self.widget.clone(), self.size);
-    }
-}
+impl Visit for Node {
+    fn visit(&self, frame: &mut Frame<'_, CrosstermBackend<Stdout>>) {
+        match &self.0 {
+            Inner::Node(ref inner) => inner.visit(frame),
+            _ => {},
+        }
 
-impl<'a> Visit<'a> for FileList<'a> {
-    fn visit(&self, frame: &mut Frame<'a, CrosstermBackend<Stdout>>) {
-        self.file_list.visit(frame);
+        for children in self.1.iter() {
+            children.visit(frame);
+        }
     }
 }

@@ -1,5 +1,4 @@
 use std::io::Stdout;
-use std::rc::Rc;
 
 use crate::widget::*;
 
@@ -32,12 +31,12 @@ pub fn basic_style() -> Style {
     Style::default().fg(Color::White).bg(Color::Black)
 }
 
-pub fn get_ui_tree(size: Rect, filename: Vec<String>) -> Main<'static> {
+pub fn get_ui_tree(size: Rect, filename: Vec<String>) -> Node {
     let footer = footer();
 
     let vflex = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(97), Constraint::Percentage(3)])
+        .constraints([Constraint::Percentage(98), Constraint::Percentage(2)])
         .split(size);
     let hflex = Layout::default()
         .direction(Direction::Horizontal)
@@ -54,21 +53,21 @@ pub fn get_ui_tree(size: Rect, filename: Vec<String>) -> Main<'static> {
         ])
         .split(vflex[1]);
 
-    let flist = FileList::new(filename, hflex[0]);
+    let flist = Node::new(FileList::new(filename, hflex[0]));
 
-    let fwin = Node::new(
+    let fwin = Node::new(Item::new(
         Block::default()
             .borders(Borders::ALL)
             .border_style(IDLE)
             .style(Style::default()),
         hflex[1],
-    );
+    ));
 
     let footer = footer
         .into_iter()
         .zip(fflex)
         .map(|(widget, size)| {
-            Node::new(
+            Item::new(
                 widget
                     .block(
                         Block::default()
@@ -82,15 +81,19 @@ pub fn get_ui_tree(size: Rect, filename: Vec<String>) -> Main<'static> {
                 size,
             )
         })
-        .collect::<Vec<Node<Paragraph>>>();
+        .collect::<Vec<Item<Paragraph>>>();
+    let footer = Node::new(FootList(footer));
 
-    Main {
-        file_list: flist,
-        file_buff: fwin,
-        footers: footer,
-    }
+    Node(
+        Inner::Root,
+        vec![
+            flist,
+            fwin,
+            footer,
+        ]
+    )
 }
 
-pub fn ui(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, main: Rc<Main<'static>>) {
+pub fn ui<'a>(frame: &mut Frame<'a, CrosstermBackend<Stdout>>, main: &Node) {
     main.visit(frame);
 }
