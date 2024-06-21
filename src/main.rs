@@ -1,13 +1,14 @@
 mod ui;
-pub mod widget;
+pub mod resource;
 
 use std::io::{stdout, Stdout};
 use std::ops::Drop;
 
 use clap::Parser;
 use crossterm::{event::*, execute, terminal::*};
-use tui::{backend::CrosstermBackend, Terminal};
-use ui::get_ui_tree;
+use tui::{backend::CrosstermBackend, Terminal, widgets::*};
+
+use crate::resource::Resource;
 
 pub const DELTA: u64 = 16;
 
@@ -37,14 +38,14 @@ impl App {
             EnableMouseCapture
         )?;
 
-        let size = self.terminal.size()?;
-        let tree = get_ui_tree(size, filename);
+        let mut resource = Resource::default();
+        resource.insert::<List, _>(filename);
 
         loop {
-            if key_listener()? {
+            if key_listener(&mut resource)? {
                 return Ok(());
             }
-            self.terminal.draw(|f| ui::ui(f, &tree))?;
+            self.terminal.draw(|f| ui::ui(f, &resource))?;
         }
     }
 }
@@ -62,7 +63,7 @@ impl Drop for App {
     }
 }
 
-fn key_listener() -> anyhow::Result<bool> {
+fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
     if poll(std::time::Duration::from_millis(DELTA))? {
         match read()? {
             Event::Key(KeyEvent {
@@ -75,6 +76,14 @@ fn key_listener() -> anyhow::Result<bool> {
                 modifiers: KeyModifiers::CONTROL,
                 ..
             }) => return Ok(true),
+            Event::Key(KeyEvent {
+                code: KeyCode::Char('n'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            }) => {
+                let list = res.get_mut::<List, Vec<String>>();
+                list.push("new_file".to_string());
+            },
             _ => {}
         }
     }

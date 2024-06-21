@@ -1,16 +1,10 @@
 use std::io::Stdout;
 
-use crate::widget::*;
-
 use tui::{backend::CrosstermBackend, layout::*, style::*, widgets::*, Frame};
 
-pub const IDLE: Style = Style {
-    fg: Some(Color::Rgb(105, 105, 105)),
-    bg: None,
-    add_modifier: Modifier::empty(),
-    sub_modifier: Modifier::empty(),
-};
-pub const HOVR: Style = Style {
+use crate::resource::Resource;
+
+pub const BLOCK: Style = Style {
     fg: Some(Color::White),
     bg: None,
     add_modifier: Modifier::empty(),
@@ -31,17 +25,23 @@ pub fn basic_style() -> Style {
     Style::default().fg(Color::White).bg(Color::Black)
 }
 
-pub fn get_ui_tree(size: Rect, filename: Vec<String>) -> Node {
-    let footer = footer();
+pub fn ui(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, res: &Resource) {
+    let size = frame.size();
 
     let vflex = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(98), Constraint::Percentage(2)])
         .split(size);
+
+    ui_main(frame, vflex, res);
+}
+
+fn ui_main(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, vflex: Vec<Rect>, res: &Resource) {
     let hflex = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(20), Constraint::Percentage(80)])
         .split(vflex[0]);
+
     let fflex = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
@@ -53,47 +53,48 @@ pub fn get_ui_tree(size: Rect, filename: Vec<String>) -> Node {
         ])
         .split(vflex[1]);
 
-    let flist = Node::new(FileList::new(filename, hflex[0]));
-
-    let fwin = Node::new(Item::new(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(IDLE)
-            .style(Style::default()),
-        hflex[1],
-    ));
-
-    let footer = footer
-        .into_iter()
-        .zip(fflex)
-        .map(|(widget, size)| {
-            Item::new(
-                widget
-                    .block(
-                        Block::default()
-                            .borders(Borders::LEFT)
-                            .border_style(HOVR)
-                            .style(Style::default()),
-                    )
-                    .style(basic_style())
-                    .wrap(Wrap { trim: false })
-                    .alignment(Alignment::Left),
-                size,
-            )
-        })
-        .collect::<Vec<Item<Paragraph>>>();
-    let footer = Node::new(FootList(footer));
-
-    Node {
-        inner: Inner::Root,
-        next: vec![
-            flist,
-            fwin,
-            footer,
-        ],
-    }
+    ui_text(frame, hflex, res);
+    ui_footer(frame, fflex);
 }
 
-pub fn ui<'a>(frame: &mut Frame<'a, CrosstermBackend<Stdout>>, main: &Node) {
-    main.visit(frame);
+fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, res: &Resource) {
+    let items = res.get::<List, Vec<String>>();
+    let list = List::new(
+        items
+        .iter()
+        .map(|i| ListItem::new(i.as_str()))
+        .collect::<Vec<ListItem>>()
+    )
+    .block(Block::default()
+        .borders(Borders::ALL)
+        .border_style(BLOCK)
+        .style(Style::default()),
+    )
+    .style(basic_style())
+    .highlight_symbol(">");
+
+    frame.render_widget(list, hflex[0]);
+
+    frame.render_widget(Block::default()
+        .borders(Borders::ALL)
+        .border_style(BLOCK)
+        .style(Style::default()),
+    hflex[1]);
+}
+
+fn ui_footer(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, fflex: Vec<Rect>) {
+    for (footer, size) in footer().into_iter().zip(fflex) {
+        frame.render_widget(footer
+            .block(
+                Block::default()
+                    .borders(Borders::LEFT)
+                    .border_style(BLOCK)
+                    .style(Style::default()),
+            )
+            .style(basic_style())
+            .wrap(Wrap { trim: false })
+            .alignment(Alignment::Left),
+            size,
+        );
+    }
 }
