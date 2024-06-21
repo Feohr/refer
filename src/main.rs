@@ -1,14 +1,16 @@
 mod ui;
 pub mod resource;
+pub mod cursor;
 
 use std::io::{stdout, Stdout};
 use std::ops::Drop;
 
 use clap::Parser;
 use crossterm::{event::*, execute, terminal::*};
-use tui::{backend::CrosstermBackend, Terminal, widgets::*};
+use tui::{backend::CrosstermBackend, Terminal};
 
 use crate::resource::Resource;
+use crate::cursor::Pointer;
 
 pub const DELTA: u64 = 16;
 
@@ -31,20 +33,20 @@ impl App {
         Ok(App { terminal })
     }
 
-    fn run(&mut self, filename: Vec<String>) -> anyhow::Result<()> {
+    fn run(&mut self) -> anyhow::Result<()> {
         execute!(
             self.terminal.backend_mut(),
             EnterAlternateScreen,
             EnableMouseCapture
         )?;
 
-        let mut resource = Resource::default();
-        resource.insert::<List, _>(filename);
+        let mut resource = init_resource()?;
 
         loop {
             if key_listener(&mut resource)? {
                 return Ok(());
             }
+
             self.terminal.draw(|f| ui::ui(f, &resource))?;
         }
     }
@@ -81,8 +83,22 @@ fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
                 modifiers: KeyModifiers::CONTROL,
                 ..
             }) => {
-                let list = res.get_mut::<List, Vec<String>>();
+                let list = res.get_mut::<Vec<String>>();
                 list.push("new_file".to_string());
+            },
+            Event::Key(KeyEvent {
+                code: KeyCode::Left,
+                ..
+            }) => {
+                let pointer = res.get_mut::<Pointer>();
+                pointer.shift_left();
+            },
+            Event::Key(KeyEvent {
+                code: KeyCode::Right,
+                ..
+            }) => {
+                let pointer = res.get_mut::<Pointer>();
+                pointer.shift_rigth();
             },
             _ => {}
         }
@@ -91,16 +107,20 @@ fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
     Ok(false)
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn init_resource() -> anyhow::Result<Resource> {
     let args = Refer::parse();
 
-    if args.filename.is_empty() {
-        return Ok(());
-    }
+    let mut resource = Resource::default();
+    resource.insert(args.filename);
+    resource.insert(Pointer::new());
 
+    Ok(resource)
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let mut main = App::new()?;
-    main.run(args.filename)?;
+    main.run()?;
 
     Ok(())
 }

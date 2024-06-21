@@ -3,9 +3,16 @@ use std::io::Stdout;
 use tui::{backend::CrosstermBackend, layout::*, style::*, widgets::*, Frame};
 
 use crate::resource::Resource;
+use crate::cursor::Pointer;
 
 pub const BLOCK: Style = Style {
     fg: Some(Color::White),
+    bg: None,
+    add_modifier: Modifier::empty(),
+    sub_modifier: Modifier::empty(),
+};
+pub const FADE: Style = Style {
+    fg: Some(Color::Rgb(89, 89, 89)),
     bg: None,
     add_modifier: Modifier::empty(),
     sub_modifier: Modifier::empty(),
@@ -58,7 +65,12 @@ fn ui_main(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, vflex: Vec<Rect>, re
 }
 
 fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, res: &Resource) {
-    let items = res.get::<List, Vec<String>>();
+    let items = res.get::<Vec<String>>();
+
+    let cursor = res.get::<Pointer>();
+    let list_shade = if cursor.is_list() { BLOCK } else { FADE };
+    let text_shade = if cursor.is_text() { BLOCK } else { FADE };
+
     let list = List::new(
         items
         .iter()
@@ -67,7 +79,8 @@ fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, re
     )
     .block(Block::default()
         .borders(Borders::ALL)
-        .border_style(BLOCK)
+        .border_style(list_shade)
+        .border_type(BorderType::Thick)
         .style(Style::default()),
     )
     .style(basic_style())
@@ -77,7 +90,8 @@ fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, re
 
     frame.render_widget(Block::default()
         .borders(Borders::ALL)
-        .border_style(BLOCK)
+        .border_style(text_shade)
+        .border_type(BorderType::Thick)
         .style(Style::default()),
     hflex[1]);
 }
