@@ -9,8 +9,6 @@ use crossterm::{event::*, execute, terminal::*};
 use tui::{backend::CrosstermBackend, Terminal};
 use ui::get_ui_tree;
 
-use crate::widget::Node;
-
 pub const DELTA: u64 = 16;
 
 #[derive(Parser)]
@@ -40,10 +38,10 @@ impl App {
         )?;
 
         let size = self.terminal.size()?;
-        let mut tree = get_ui_tree(size, filename);
+        let tree = get_ui_tree(size, filename);
 
         loop {
-            if key_listener(&mut tree)? {
+            if key_listener()? {
                 return Ok(());
             }
             self.terminal.draw(|f| ui::ui(f, &tree))?;
@@ -64,7 +62,7 @@ impl Drop for App {
     }
 }
 
-fn key_listener(_main: &mut Node) -> anyhow::Result<bool> {
+fn key_listener() -> anyhow::Result<bool> {
     if poll(std::time::Duration::from_millis(DELTA))? {
         match read()? {
             Event::Key(KeyEvent {

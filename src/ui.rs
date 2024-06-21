@@ -84,14 +84,14 @@ pub fn get_ui_tree(size: Rect, filename: Vec<String>) -> Node {
         .collect::<Vec<Item<Paragraph>>>();
     let footer = Node::new(FootList(footer));
 
-    Node(
-        Inner::Root,
-        vec![
+    Node {
+        inner: Inner::Root,
+        next: vec![
             flist,
             fwin,
             footer,
-        ]
-    )
+        ],
+    }
 }
 
 pub fn ui<'a>(frame: &mut Frame<'a, CrosstermBackend<Stdout>>, main: &Node) {

@@ -9,22 +9,27 @@ pub enum Inner {
     Node(Box<dyn Visit>),
 }
 
-pub struct Node(pub Inner, pub Vec<Node>);
+pub struct Node {
+    pub inner: Inner,
+    pub next: Vec<Node>,
+}
+
 impl Node {
     pub fn new<V: 'static + Visit>(inner: V) -> Self {
-        Node(Inner::Node(Box::new(inner)), vec![])
+        Node {
+            inner: Inner::Node(Box::new(inner)),
+            next: vec![],
+        }
     }
 }
 
 pub struct FileList<'a> {
-    pub _files: Vec<String>,
     pub file_list: Item<List<'a>>,
 }
 
 impl<'a> FileList<'a> {
     pub fn new(filename: Vec<String>, size: Rect) -> Self {
         FileList {
-            _files: filename.clone(),
             file_list: Item::new(
                 List::<'a>::new(
                     filename
@@ -61,7 +66,7 @@ pub trait Visit {
     fn visit(&self, frame: &mut Frame<'_, CrosstermBackend<Stdout>>);
 }
 
-impl<'a, W: Widget + Clone> Visit for Item<W> {
+impl<W: Widget + Clone> Visit for Item<W> {
     fn visit(&self, frame: &mut Frame<'_, CrosstermBackend<Stdout>>) {
         frame.render_widget(self.widget.clone(), self.size);
     }
@@ -85,12 +90,12 @@ impl<'a> Visit for FootList<'a> {
 
 impl Visit for Node {
     fn visit(&self, frame: &mut Frame<'_, CrosstermBackend<Stdout>>) {
-        match &self.0 {
+        match &self.inner {
             Inner::Node(ref inner) => inner.visit(frame),
             _ => {},
         }
 
-        for children in self.1.iter() {
+        for children in self.next.iter() {
             children.visit(frame);
         }
     }
