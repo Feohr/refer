@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 pub struct Pointer {
     index: usize,
     mode: [Mode; 2],
@@ -59,11 +57,8 @@ impl EntryBox {
     pub fn toggle(&mut self) {
         self.0 = !self.0;
     }
-}
 
-impl Deref for EntryBox {
-    type Target = bool;
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    pub fn bool(&self) -> bool {
+        self.0
     }
 }

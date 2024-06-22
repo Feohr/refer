@@ -1,6 +1,6 @@
-mod ui;
-pub mod resource;
 pub mod cursor;
+pub mod resource;
+mod ui;
 
 use std::io::{stdout, Stdout};
 use std::ops::Drop;
@@ -10,8 +10,8 @@ use clap::Parser;
 use crossterm::{event::*, execute, terminal::*};
 use tui::{backend::CrosstermBackend, Terminal};
 
+use crate::cursor::{EntryBox, Pointer};
 use crate::resource::Resource;
-use crate::cursor::{Pointer, EntryBox};
 
 pub const DELTA: u64 = 16;
 
@@ -86,21 +86,21 @@ fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
             }) => {
                 let entry = res.get_mut::<EntryBox>();
                 entry.toggle();
-            },
+            }
             Event::Key(KeyEvent {
                 code: KeyCode::Left,
                 ..
             }) => {
                 let pointer = res.get_mut::<Pointer>();
                 pointer.shift_left();
-            },
+            }
             Event::Key(KeyEvent {
                 code: KeyCode::Right,
                 ..
             }) => {
                 let pointer = res.get_mut::<Pointer>();
                 pointer.shift_rigth();
-            },
+            }
             _ => {}
         }
     }

@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use std::any::{Any, TypeId};
+use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct Resource {
@@ -10,7 +10,10 @@ impl Resource {
     pub fn insert<T: 'static>(&mut self, item: T) {
         let id = std::any::TypeId::of::<T>();
         if self._inner.get(&id).is_some() {
-            panic!("Resource of type {} is already present", std::any::type_name::<T>());
+            panic!(
+                "Resource of type {} is already present",
+                std::any::type_name::<T>()
+            );
         }
         self._inner.insert(id, Box::new(item));
     }
@@ -20,8 +23,7 @@ impl Resource {
 
         let type_nm = std::any::type_name::<T>();
 
-        self
-            ._inner
+        self._inner
             .get(&id)
             .expect(&format!("The resource {type_nm} was never allocated"))
             .downcast_ref::<T>()
@@ -33,8 +35,7 @@ impl Resource {
 
         let type_nm = std::any::type_name::<T>();
 
-        self
-            ._inner
+        self._inner
             .get_mut(&id)
             .expect(&format!("The resource {type_nm} was never allocated"))
             .downcast_mut::<T>()

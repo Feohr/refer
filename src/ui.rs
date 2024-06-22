@@ -2,8 +2,8 @@ use std::io::Stdout;
 
 use tui::{backend::CrosstermBackend, layout::*, style::*, widgets::*, Frame};
 
-use crate::resource::Resource;
 use crate::cursor::*;
+use crate::resource::Resource;
 
 pub const BLOCK: Style = Style {
     fg: Some(Color::White),
@@ -76,21 +76,20 @@ fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, re
     let cursor = res.get::<Pointer>();
     let text_shade = if cursor.is_text() { BLOCK } else { FADE };
 
-    frame.render_widget(Block::default()
-        .borders(Borders::ALL)
-        .border_style(text_shade)
-        .border_type(BorderType::Thick)
-        .style(Style::default()),
-    hflex[1]);
+    frame.render_widget(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(text_shade)
+            .border_type(BorderType::Thick)
+            .style(Style::default()),
+        hflex[1],
+    );
 }
 
 fn ui_list_box(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Rect, res: &Resource) {
     let lflex = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage(90),
-            Constraint::Percentage(10),
-        ])
+        .constraints([Constraint::Percentage(90), Constraint::Percentage(10)])
         .split(hflex);
 
     let items = res.get::<Vec<String>>();
@@ -100,15 +99,16 @@ fn ui_list_box(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Rect, res
 
     let list = List::new(
         items
-        .iter()
-        .map(|i| ListItem::new(i.as_str()))
-        .collect::<Vec<ListItem>>()
+            .iter()
+            .map(|i| ListItem::new(i.as_str()))
+            .collect::<Vec<ListItem>>(),
     )
-    .block(Block::default()
-        .borders(Borders::ALL)
-        .border_style(list_shade)
-        .border_type(BorderType::Thick)
-        .style(Style::default()),
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(list_shade)
+            .border_type(BorderType::Thick)
+            .style(Style::default()),
     )
     .style(basic_style())
     .highlight_symbol(">");
@@ -116,7 +116,7 @@ fn ui_list_box(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Rect, res
     frame.render_widget(list, lflex[0]);
 
     let visible = res.get::<EntryBox>();
-    let entry_style = if **visible { BLOCK } else { INVISIBLE };
+    let entry_style = if visible.bool() { BLOCK } else { INVISIBLE };
 
     let entry_box = Block::default()
         .borders(Borders::ALL)
@@ -128,16 +128,17 @@ fn ui_list_box(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Rect, res
 
 fn ui_footer(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, fflex: Vec<Rect>) {
     for (footer, size) in footer().into_iter().zip(fflex) {
-        frame.render_widget(footer
-            .block(
-                Block::default()
-                    .borders(Borders::LEFT)
-                    .border_style(BLOCK)
-                    .style(Style::default()),
-            )
-            .style(basic_style())
-            .wrap(Wrap { trim: false })
-            .alignment(Alignment::Left),
+        frame.render_widget(
+            footer
+                .block(
+                    Block::default()
+                        .borders(Borders::LEFT)
+                        .border_style(BLOCK)
+                        .style(Style::default()),
+                )
+                .style(basic_style())
+                .wrap(Wrap { trim: false })
+                .alignment(Alignment::Left),
             size,
         );
     }
