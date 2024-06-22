@@ -3,10 +3,16 @@ use std::io::Stdout;
 use tui::{backend::CrosstermBackend, layout::*, style::*, widgets::*, Frame};
 
 use crate::resource::Resource;
-use crate::cursor::Pointer;
+use crate::cursor::*;
 
 pub const BLOCK: Style = Style {
     fg: Some(Color::White),
+    bg: None,
+    add_modifier: Modifier::empty(),
+    sub_modifier: Modifier::empty(),
+};
+pub const INVISIBLE: Style = Style {
+    fg: Some(Color::Black),
     bg: None,
     add_modifier: Modifier::empty(),
     sub_modifier: Modifier::empty(),
@@ -65,11 +71,32 @@ fn ui_main(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, vflex: Vec<Rect>, re
 }
 
 fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, res: &Resource) {
+    ui_list_box(frame, hflex[0], res);
+
+    let cursor = res.get::<Pointer>();
+    let text_shade = if cursor.is_text() { BLOCK } else { FADE };
+
+    frame.render_widget(Block::default()
+        .borders(Borders::ALL)
+        .border_style(text_shade)
+        .border_type(BorderType::Thick)
+        .style(Style::default()),
+    hflex[1]);
+}
+
+fn ui_list_box(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Rect, res: &Resource) {
+    let lflex = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage(90),
+            Constraint::Percentage(10),
+        ])
+        .split(hflex);
+
     let items = res.get::<Vec<String>>();
 
     let cursor = res.get::<Pointer>();
     let list_shade = if cursor.is_list() { BLOCK } else { FADE };
-    let text_shade = if cursor.is_text() { BLOCK } else { FADE };
 
     let list = List::new(
         items
@@ -86,14 +113,17 @@ fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, re
     .style(basic_style())
     .highlight_symbol(">");
 
-    frame.render_widget(list, hflex[0]);
+    frame.render_widget(list, lflex[0]);
 
-    frame.render_widget(Block::default()
+    let visible = res.get::<EntryBox>();
+    let entry_style = if **visible { BLOCK } else { INVISIBLE };
+
+    let entry_box = Block::default()
         .borders(Borders::ALL)
-        .border_style(text_shade)
-        .border_type(BorderType::Thick)
-        .style(Style::default()),
-    hflex[1]);
+        .border_style(entry_style)
+        .style(Style::default());
+
+    frame.render_widget(entry_box, lflex[1]);
 }
 
 fn ui_footer(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, fflex: Vec<Rect>) {

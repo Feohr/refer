@@ -23,7 +23,7 @@ impl Resource {
         self
             ._inner
             .get(&id)
-            .expect(&format!("There is no resource {type_nm}"))
+            .expect(&format!("The resource {type_nm} was never allocated"))
             .downcast_ref::<T>()
             .expect("Error while downcasting to &{type_nm}")
     }
@@ -36,7 +36,7 @@ impl Resource {
         self
             ._inner
             .get_mut(&id)
-            .expect(&format!("There is no resource {type_nm}"))
+            .expect(&format!("The resource {type_nm} was never allocated"))
             .downcast_mut::<T>()
             .expect("Error while downcasting to &{type_nm}")
     }
