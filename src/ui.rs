@@ -3,7 +3,8 @@ use std::io::Stdout;
 use tui::{backend::CrosstermBackend, layout::*, style::*, widgets::*, Frame};
 
 use crate::cursor::*;
-use crate::resource::Resource;
+use crate::input::*;
+use crate::resource::*;
 
 pub const BLOCK: Style = Style {
     fg: Some(Color::White),
@@ -72,8 +73,16 @@ fn ui_main(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, vflex: Vec<Rect>, re
 
 fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, res: &Resource) {
     let cursor = res.get::<Pointer>();
-    let text_shade = if cursor.cursor_at::<View>() { BLOCK } else { FADE };
-    let list_shade = if cursor.cursor_at::<Files>() { BLOCK } else { FADE };
+    let text_shade = if cursor.cursor_at::<View>() {
+        BLOCK
+    } else {
+        FADE
+    };
+    let list_shade = if cursor.cursor_at::<Files>() {
+        BLOCK
+    } else {
+        FADE
+    };
 
     frame.render_widget(
         Block::default()
@@ -100,15 +109,13 @@ fn ui_list_box(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Rect, res
     let lflex = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
-        .constraints([Constraint::Percentage(95), Constraint::Percentage(5)])
+        .constraints([Constraint::Percentage(92), Constraint::Percentage(8)])
         .split(hflex);
 
-    let items = res.get::<Vec<String>>();
-
+    let items = res.get::<FileBuff>().iter();
     let list = List::new(
         items
-            .iter()
-            .map(|i| ListItem::new(i.as_str()))
+            .map(|(i, _)| ListItem::new(i.as_str()))
             .collect::<Vec<ListItem>>(),
     )
     .block(Block::default().border_style(INVISIBLE))
@@ -116,15 +123,32 @@ fn ui_list_box(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Rect, res
 
     frame.render_widget(list, lflex[0]);
 
-    let visible = res.get::<EntryBox>();
-    let entry_style = if visible.bool() { BLOCK } else { INVISIBLE };
+    if res.get::<EntryBox>().bool() {
+        let mut len = res.get::<EntryBox>().len();
+        let width = lflex[1].width.saturating_sub(2) as usize;
 
-    let entry_box = Block::default()
-        .borders(Borders::ALL)
-        .border_style(entry_style)
-        .style(Style::default());
+        if len >= width {
+            len = width.saturating_sub(1);
+        }
 
-    frame.render_widget(entry_box, lflex[1]);
+        let entry_text = res.get::<EntryBox>().get_span(width);
+
+        let entry_box = Paragraph::new(entry_text)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(BLOCK)
+                    .style(Style::default()),
+            )
+            .wrap(Wrap { trim: true })
+            .alignment(Alignment::Left);
+
+        frame.render_widget(entry_box, lflex[1]);
+        frame.set_cursor(
+            lflex[1].left() + len.saturating_add(1) as u16,
+            lflex[1].top() + 1,
+        );
+    }
 }
 
 fn ui_footer(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, fflex: Vec<Rect>) {

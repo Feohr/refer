@@ -1,4 +1,5 @@
 pub mod cursor;
+pub mod input;
 pub mod resource;
 mod ui;
 
@@ -11,7 +12,8 @@ use crossterm::{event::*, execute, terminal::*};
 use tui::{backend::CrosstermBackend, Terminal};
 
 use crate::cursor::*;
-use crate::resource::Resource;
+use crate::input::*;
+use crate::resource::*;
 
 pub const DELTA: u64 = 16;
 
@@ -68,49 +70,87 @@ impl Drop for App {
 
 fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
     if poll(std::time::Duration::from_millis(DELTA))? {
-        match read()? {
-            Event::Key(KeyEvent {
-                code: KeyCode::Char('q'),
-                modifiers: KeyModifiers::CONTROL,
-                ..
-            })
-            | Event::Key(KeyEvent {
-                code: KeyCode::Char('c'),
-                modifiers: KeyModifiers::CONTROL,
-                ..
-            }) => return Ok(true),
-            Event::Key(KeyEvent {
-                code: KeyCode::Char('n'),
-                modifiers: KeyModifiers::CONTROL,
-                ..
-            }) => {
-                {
-                    let pointer = res.get_mut::<Pointer>();
-                    pointer.toggle();
-                }
-
-                let entry = res.get_mut::<EntryBox>();
-                entry.toggle();
-            }
-            Event::Key(KeyEvent {
-                code: KeyCode::Left,
-                ..
-            }) => {
-                let pointer = res.get_mut::<Pointer>();
-                pointer.set_cursor::<Files>();
-            }
-            Event::Key(KeyEvent {
-                code: KeyCode::Right,
-                ..
-            }) => {
-                let pointer = res.get_mut::<Pointer>();
-                pointer.set_cursor::<View>();
-            }
-            _ => {}
+        let event = read()?;
+        if quit_listener(&event) {
+            return Ok(true);
+        }
+        match res.get::<EntryBox>().bool() {
+            true => write_key_event(event, res),
+            false => normal_key_event(event, res),
         }
     }
 
     Ok(false)
+}
+
+fn quit_listener(event: &Event) -> bool {
+    match event {
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('q'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        })
+        | Event::Key(KeyEvent {
+            code: KeyCode::Char('c'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => return true,
+        _ => {}
+    }
+    false
+}
+
+fn normal_key_event(event: Event, res: &mut Resource) {
+    match event {
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('n'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => {
+            res.get_mut::<Pointer>().toggle();
+            res.get_mut::<EntryBox>().toggle();
+        }
+        Event::Key(KeyEvent {
+            code: KeyCode::Left,
+            ..
+        }) => res.get_mut::<Pointer>().set_cursor::<Files>(),
+        Event::Key(KeyEvent {
+            code: KeyCode::Right,
+            ..
+        }) => res.get_mut::<Pointer>().set_cursor::<View>(),
+        _ => {}
+    }
+}
+
+fn write_key_event(event: Event, res: &mut Resource) {
+    match event {
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('n'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => {
+            res.get_mut::<Pointer>().toggle();
+            res.get_mut::<EntryBox>().toggle();
+        }
+        Event::Key(KeyEvent {
+            code: KeyCode::Enter,
+            ..
+        }) => {
+            let name = res.get_mut::<EntryBox>().take();
+            res.get_mut::<FileBuff>().insert(name);
+            res.get_mut::<Pointer>().toggle();
+            res.get_mut::<EntryBox>().toggle();
+        }
+        Event::Key(KeyEvent {
+            code: KeyCode::Backspace,
+            ..
+        }) => res.get_mut::<EntryBox>().pop(),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char(c),
+            ..
+        }) => res.get_mut::<EntryBox>().push(c),
+        _ => {}
+    }
 }
 
 fn init_resource() -> anyhow::Result<Resource> {
@@ -120,6 +160,7 @@ fn init_resource() -> anyhow::Result<Resource> {
     resource.insert(args.filename);
     resource.insert(Pointer::new());
     resource.insert(EntryBox::new());
+    resource.insert(FileBuff::default());
 
     Ok(resource)
 }
