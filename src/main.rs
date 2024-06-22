@@ -10,7 +10,7 @@ use clap::Parser;
 use crossterm::{event::*, execute, terminal::*};
 use tui::{backend::CrosstermBackend, Terminal};
 
-use crate::cursor::{EntryBox, Pointer};
+use crate::cursor::*;
 use crate::resource::Resource;
 
 pub const DELTA: u64 = 16;
@@ -84,6 +84,11 @@ fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
                 modifiers: KeyModifiers::CONTROL,
                 ..
             }) => {
+                {
+                    let pointer = res.get_mut::<Pointer>();
+                    pointer.toggle();
+                }
+
                 let entry = res.get_mut::<EntryBox>();
                 entry.toggle();
             }
@@ -92,14 +97,14 @@ fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
                 ..
             }) => {
                 let pointer = res.get_mut::<Pointer>();
-                pointer.shift_left();
+                pointer.set_cursor::<Files>();
             }
             Event::Key(KeyEvent {
                 code: KeyCode::Right,
                 ..
             }) => {
                 let pointer = res.get_mut::<Pointer>();
-                pointer.shift_rigth();
+                pointer.set_cursor::<View>();
             }
             _ => {}
         }

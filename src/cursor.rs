@@ -1,6 +1,8 @@
+use std::any::TypeId;
+
 pub struct Pointer {
-    index: usize,
-    mode: [Mode; 2],
+    toggle: Option<TypeId>,
+    curr: TypeId,
 }
 
 pub enum Mode {
@@ -11,39 +13,31 @@ pub enum Mode {
 impl Pointer {
     pub fn new() -> Self {
         Pointer {
-            index: 1,
-            mode: [Mode::List, Mode::Text],
+            toggle: None,
+            curr: TypeId::of::<Self>(),
         }
     }
 
-    pub fn shift_left(&mut self) {
-        if self.index == 0 {
-            self.index = 1;
+    pub fn set_cursor<W: 'static>(&mut self) {
+        if self.toggle.is_none() {
+            self.curr = TypeId::of::<W>();
+        }
+    }
+
+    pub fn toggle(&mut self) {
+        if let Some(toggle) = self.toggle.take() {
+            self.curr = toggle;
             return;
         }
-        self.index = self.index - 1;
+        self.toggle = Some(self.curr);
+        self.curr = TypeId::of::<Self>();
     }
 
-    pub fn shift_rigth(&mut self) {
-        if self.index == 1 {
-            self.index = 0;
-            return;
+    pub fn cursor_at<W: 'static>(&self) -> bool {
+        if self.toggle.is_none() {
+            return self.curr == TypeId::of::<W>();
         }
-        self.index = self.index + 1;
-    }
-
-    pub fn is_list(&self) -> bool {
-        match self.mode[self.index] {
-            Mode::List => true,
-            Mode::Text => false,
-        }
-    }
-
-    pub fn is_text(&self) -> bool {
-        match self.mode[self.index] {
-            Mode::List => false,
-            Mode::Text => true,
-        }
+        false
     }
 }
 
@@ -62,3 +56,6 @@ impl EntryBox {
         self.0
     }
 }
+
+pub struct Files;
+pub struct View;

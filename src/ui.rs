@@ -71,10 +71,20 @@ fn ui_main(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, vflex: Vec<Rect>, re
 }
 
 fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, res: &Resource) {
-    ui_list_box(frame, hflex[0], res);
-
     let cursor = res.get::<Pointer>();
-    let text_shade = if cursor.is_text() { BLOCK } else { FADE };
+    let text_shade = if cursor.cursor_at::<View>() { BLOCK } else { FADE };
+    let list_shade = if cursor.cursor_at::<Files>() { BLOCK } else { FADE };
+
+    frame.render_widget(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(list_shade)
+            .border_type(BorderType::Thick)
+            .style(Style::default()),
+        hflex[0],
+    );
+
+    ui_list_box(frame, hflex[0], res);
 
     frame.render_widget(
         Block::default()
@@ -89,13 +99,11 @@ fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, re
 fn ui_list_box(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Rect, res: &Resource) {
     let lflex = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(90), Constraint::Percentage(10)])
+        .margin(1)
+        .constraints([Constraint::Percentage(95), Constraint::Percentage(5)])
         .split(hflex);
 
     let items = res.get::<Vec<String>>();
-
-    let cursor = res.get::<Pointer>();
-    let list_shade = if cursor.is_list() { BLOCK } else { FADE };
 
     let list = List::new(
         items
@@ -103,14 +111,7 @@ fn ui_list_box(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Rect, res
             .map(|i| ListItem::new(i.as_str()))
             .collect::<Vec<ListItem>>(),
     )
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(list_shade)
-            .border_type(BorderType::Thick)
-            .style(Style::default()),
-    )
-    .style(basic_style())
+    .block(Block::default().border_style(INVISIBLE))
     .highlight_symbol(">");
 
     frame.render_widget(list, lflex[0]);
