@@ -23,7 +23,7 @@ impl EntryBox {
     }
 
     pub fn push(&mut self, ch: char) {
-        self.input_buff.push(ch)
+        self.input_buff.push(ch);
     }
 
     pub fn pop(&mut self) {
@@ -32,6 +32,10 @@ impl EntryBox {
 
     pub fn len(&self) -> usize {
         self.input_buff.len()
+    }
+
+    pub fn clear(&mut self) {
+        self.input_buff.clear();
     }
 
     pub fn take(&mut self) -> String {

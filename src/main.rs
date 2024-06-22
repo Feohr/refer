@@ -130,6 +130,7 @@ fn write_key_event(event: Event, res: &mut Resource) {
             ..
         }) => {
             res.get_mut::<Pointer>().toggle();
+            res.get_mut::<EntryBox>().clear();
             res.get_mut::<EntryBox>().toggle();
         }
         Event::Key(KeyEvent {

@@ -1,6 +1,6 @@
 use std::io::Stdout;
 
-use tui::{backend::CrosstermBackend, layout::*, style::*, widgets::*, Frame};
+use tui::{backend::CrosstermBackend, layout::*, style::*, text::*, widgets::*, Frame};
 
 use crate::cursor::*;
 use crate::input::*;
@@ -25,18 +25,14 @@ pub const FADE: Style = Style {
     sub_modifier: Modifier::empty(),
 };
 
-fn footer<'a>() -> Vec<Paragraph<'a>> {
+fn headers<'a>() -> Vec<Spans<'a>> {
     vec![
-        Paragraph::new("`ctrl + q`/`ctrl + c` - quit"),
-        Paragraph::new("`ctrl + n` - add a new file"),
-        Paragraph::new("`ctrl + up` - move cursor to top"),
-        Paragraph::new("`ctrl + down` - move cursor to bottom"),
-        Paragraph::new("`ctrl + t` - toggle tail mode"),
+        Spans::from("Press 'ctrl + q'/'ctrl + c' to quit"),
+        Spans::from("'ctrl + n' to add a new file"),
+        Spans::from("'ctrl + up' to go to top of the file"),
+        Spans::from("'ctrl + down' to go to bottom of the file"),
+        Spans::from("'ctrl + t' to toggle tail mode"),
     ]
-}
-
-pub fn basic_style() -> Style {
-    Style::default().fg(Color::White).bg(Color::Black)
 }
 
 pub fn ui(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, res: &Resource) {
@@ -44,7 +40,7 @@ pub fn ui(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, res: &Resource) {
 
     let vflex = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(98), Constraint::Percentage(2)])
+        .constraints([Constraint::Percentage(5), Constraint::Percentage(95)])
         .split(size);
 
     ui_main(frame, vflex, res);
@@ -54,21 +50,14 @@ fn ui_main(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, vflex: Vec<Rect>, re
     let hflex = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(20), Constraint::Percentage(80)])
-        .split(vflex[0]);
-
-    let fflex = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-        ])
         .split(vflex[1]);
 
     ui_text(frame, hflex, res);
-    ui_footer(frame, fflex);
+    ui_header(frame, vflex[0]);
+}
+
+fn ui_header(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, fflex: Rect) {
+    frame.render_widget(Tabs::new(headers()), fflex);
 }
 
 fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, res: &Resource) {
@@ -96,11 +85,13 @@ fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, re
     ui_list_box(frame, hflex[0], res);
 
     frame.render_widget(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(text_shade)
-            .border_type(BorderType::Thick)
-            .style(Style::default()),
+        Paragraph::new(vec![]).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(text_shade)
+                .border_type(BorderType::Thick)
+                .style(Style::default()),
+        ),
         hflex[1],
     );
 }
@@ -147,24 +138,6 @@ fn ui_list_box(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Rect, res
         frame.set_cursor(
             lflex[1].left() + len.saturating_add(1) as u16,
             lflex[1].top() + 1,
-        );
-    }
-}
-
-fn ui_footer(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, fflex: Vec<Rect>) {
-    for (footer, size) in footer().into_iter().zip(fflex) {
-        frame.render_widget(
-            footer
-                .block(
-                    Block::default()
-                        .borders(Borders::LEFT)
-                        .border_style(BLOCK)
-                        .style(Style::default()),
-                )
-                .style(basic_style())
-                .wrap(Wrap { trim: false })
-                .alignment(Alignment::Left),
-            size,
         );
     }
 }
