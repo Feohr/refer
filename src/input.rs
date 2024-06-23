@@ -174,8 +174,18 @@ impl FileListState {
         self.state.select(Some(self.index));
     }
 
+    pub fn bottom(&mut self) {
+        self.index = self.size.saturating_sub(1);
+        self.state.select(Some(self.index));
+    }
+
     pub fn prev(&mut self) {
         self.index = self.index.saturating_sub(1);
+        self.state.select(Some(self.index));
+    }
+
+    pub fn top(&mut self) {
+        self.index = 0;
         self.state.select(Some(self.index));
     }
 
@@ -247,10 +257,12 @@ fn normal_key_event(event: Event, res: &mut Resource) {
         }) => res.get_mut::<Pointer>().set_cursor::<View>(),
         Event::Key(KeyEvent {
             code: KeyCode::Down,
+            modifiers: KeyModifiers::NONE,
             ..
         })
         | Event::Key(KeyEvent {
             code: KeyCode::Char('j'),
+            modifiers: KeyModifiers::NONE,
             ..
         }) => {
             if res.get::<Pointer>().cursor_at::<Files>() {
@@ -258,14 +270,45 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             }
         }
         Event::Key(KeyEvent {
-            code: KeyCode::Up, ..
+            code: KeyCode::Up,
+            modifiers: KeyModifiers::NONE,
+            ..
         })
         | Event::Key(KeyEvent {
             code: KeyCode::Char('k'),
+            modifiers: KeyModifiers::NONE,
             ..
         }) => {
             if res.get::<Pointer>().cursor_at::<Files>() {
                 res.get_mut::<FileListState>().prev();
+            }
+        }
+        Event::Key(KeyEvent {
+            code: KeyCode::Down,
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        })
+        | Event::Key(KeyEvent {
+            code: KeyCode::Char('j'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => {
+            if res.get::<Pointer>().cursor_at::<Files>() {
+                res.get_mut::<FileListState>().bottom();
+            }
+        }
+        Event::Key(KeyEvent {
+            code: KeyCode::Up,
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        })
+        | Event::Key(KeyEvent {
+            code: KeyCode::Char('k'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => {
+            if res.get::<Pointer>().cursor_at::<Files>() {
+                res.get_mut::<FileListState>().top();
             }
         }
         _ => {}
