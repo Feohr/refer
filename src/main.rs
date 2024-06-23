@@ -40,7 +40,7 @@ impl App {
 
         loop {
             if key_listener(&mut resource)? { break }
-            self.terminal.draw(|f| ui::ui(f, &resource))?;
+            self.terminal.draw(|f| ui::ui(f, &mut resource))?;
         }
 
         Ok(())

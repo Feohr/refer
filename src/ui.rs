@@ -8,6 +8,7 @@ pub const FG: Color = Color::Rgb(221, 221, 221);
 pub const BG: Color = Color::Rgb(53, 53, 53);
 pub const DBG: Color = Color::Rgb(30, 30, 30);
 pub const POINT: Color = Color::Rgb(127, 127, 127);
+pub const LHI: Color = Color::Rgb(47, 47, 47);
 
 pub const BLOCK: Style = Style {
     fg: Some(POINT),
@@ -47,7 +48,7 @@ fn headers<'a>() -> Line<'a> {
     ])
 }
 
-pub fn ui(frame: &mut Frame, res: &Resource) {
+pub fn ui(frame: &mut Frame, res: &mut Resource) {
     let size = frame.size();
 
     let vflex = Layout::default()
@@ -58,7 +59,7 @@ pub fn ui(frame: &mut Frame, res: &Resource) {
     ui_main(frame, vflex, res);
 }
 
-fn ui_main(frame: &mut Frame, vflex: RectVec, res: &Resource) {
+fn ui_main(frame: &mut Frame, vflex: RectVec, res: &mut Resource) {
     let hflex = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Min(40), Constraint::Percentage(100)])
@@ -78,7 +79,7 @@ fn ui_header(frame: &mut Frame, fflex: Rect) {
     );
 }
 
-fn ui_text(frame: &mut Frame, hflex: RectVec, res: &Resource) {
+fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
     let cursor = res.get::<Pointer>();
     let text_shade = if cursor.cursor_at::<View>() {
         BLOCK
@@ -114,28 +115,38 @@ fn ui_text(frame: &mut Frame, hflex: RectVec, res: &Resource) {
     );
 }
 
-fn ui_list_box(frame: &mut Frame, hflex: Rect, res: &Resource) {
+fn get_list<'a>(items: Vec<FileName>) -> List<'a> {
+    List::new(get_list_items(items))
+        .block(Block::default().border_style(INVISIBLE))
+        .highlight_symbol(" ► ")
+        .highlight_style(Style::default().bg(LHI))
+}
+
+fn get_list_items<'a>(items: Vec<FileName>) -> Vec<ListItem<'a>> {
+     items
+        .into_iter()
+        .map(|i| ListItem::new(i.to_value()))
+        .collect::<Vec<ListItem>>()
+}
+
+fn ui_list_box(frame: &mut Frame, hflex: Rect, res: &mut Resource) {
     let lflex = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([Constraint::Percentage(100), Constraint::Min(3)])
         .split(hflex);
 
-    let items = res.get::<FileBuff>().names();
-    let list = List::new(
-        items
-            .map(|i| ListItem::new(i.as_str()))
-            .collect::<Vec<ListItem>>(),
-    )
-    .block(Block::default().border_style(INVISIBLE))
-    .highlight_symbol(">");
+    let mut list_items = res.get::<FileBuff>().names().map(Clone::clone).collect::<Vec<FileName>>();
+    list_items.sort();
+    let list = get_list(list_items);
+    let state = res.get_mut::<FileListState>().get_mut();
 
-    frame.render_widget(list, lflex[0]);
+    frame.render_stateful_widget(list, lflex[0], state);
 
     ui_entry_box(frame, lflex[1], res);
 }
 
-fn ui_entry_box(frame: &mut Frame, lflex: Rect, res: &Resource) {
+fn ui_entry_box(frame: &mut Frame, lflex: Rect, res: &mut Resource) {
     if !res.get::<EntryBox>().bool() { return }
 
     let mut len = res.get::<EntryBox>().len();

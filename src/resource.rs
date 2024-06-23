@@ -58,10 +58,10 @@ pub fn init_resource() -> anyhow::Result<Resource> {
     let args = Refer::parse();
 
     let mut resource = Resource::default();
-    resource.insert(args.filename);
     resource.insert(Pointer::new());
     resource.insert(EntryBox::new());
-    resource.insert(FileBuff::default());
+    resource.insert(FileBuff::with_files(args.filename));
+    resource.insert(FileListState::new());
 
     Ok(resource)
 }

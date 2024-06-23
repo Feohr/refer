@@ -1,7 +1,9 @@
+use std::cmp::{Eq, PartialEq, PartialOrd, Ordering};
 use std::collections::{HashMap, hash_map::Keys};
 use std::ops::Deref;
 
 use crossterm::event::*;
+use ratatui::widgets::*;
 
 use crate::resource::*;
 use crate::cursor::*;
@@ -62,29 +64,86 @@ impl EntryBox {
 
 #[derive(Default)]
 pub struct FileBuff {
-    table: HashMap<String, String>,
+    table: HashMap<FileName, String>,
+}
+
+#[derive(Default, Clone, Eq, Ord, Hash)]
+pub struct FileName {
+    value: String,
+    index: usize,
+}
+
+impl PartialEq for FileName {
+    fn eq(&self, other: &Self) -> bool {
+        self.value().eq(other.value())
+    }
+}
+
+impl PartialOrd for FileName {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.index.partial_cmp(&other.index)
+    }
+}
+
+impl FileName {
+    fn new(value: String, index: usize) -> Self {
+        FileName { value, index }
+    }
+
+    fn value(&self) -> &str {
+        &self.value
+    }
+
+    pub fn to_value(&self) -> String {
+        self.value.clone()
+    }
 }
 
 impl FileBuff {
-    pub fn names(&self) -> Keys<'_, String, String> {
+    pub fn with_files(files: Vec<String>) -> Self {
+        let mut table = HashMap::new();
+        for (index, file) in files.into_iter().enumerate() {
+            table.insert(FileName::new(file, index), String::new());
+        }
+        FileBuff { table }
+    }
+
+    pub fn names(&self) -> Keys<'_, FileName, String> {
         self.table.keys()
     }
 
-    pub fn get(&self, name: &String) -> &String {
+    pub fn get_buffer(&self, value: &String) -> &String {
         self.table
-            .get(name)
+            .get(&FileName {
+                value: value.to_string(),
+                ..Default::default()
+            })
             .expect("Buffer not present for the file {name}")
     }
 
     pub fn insert(&mut self, name: String) {
-        self.table.insert(name, String::new());
+        let len = self.table.len();
+        self.table.insert(FileName::new(name, len), String::new());
     }
 }
 
 impl Deref for FileBuff {
-    type Target = HashMap<String, String>;
+    type Target = HashMap<FileName, String>;
     fn deref(&self) -> &Self::Target {
         &self.table
+    }
+}
+
+pub struct FileListState(pub ListState);
+impl FileListState {
+    pub fn new() -> Self {
+        let mut state = ListState::default();
+        state.select(Some(0));
+        FileListState(state)
+    }
+
+    pub fn get_mut(&mut self) -> &mut ListState {
+        &mut self.0
     }
 }
 
