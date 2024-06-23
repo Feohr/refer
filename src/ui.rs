@@ -1,7 +1,8 @@
 use ratatui::{border, prelude::*, widgets::*};
 
 use crate::cursor::*;
-use crate::input::*; use crate::resource::*;
+use crate::input::*;
+use crate::resource::*;
 use crate::RectVec;
 
 pub const FG: Color = Color::Rgb(221, 221, 221);
@@ -72,9 +73,13 @@ fn ui_main(frame: &mut Frame, vflex: RectVec, res: &mut Resource) {
 fn ui_header(frame: &mut Frame, fflex: Rect) {
     frame.render_widget(
         Paragraph::new(headers())
-        .centered()
-        .block(Block::default().borders(border!(ALL)).border_style(Style::default().bg(BG)))
-        .style(Style::default().bg(BG).fg(FG)),
+            .centered()
+            .block(
+                Block::default()
+                    .borders(border!(ALL))
+                    .border_style(Style::default().bg(BG)),
+            )
+            .style(Style::default().bg(BG).fg(FG)),
         fflex,
     );
 }
@@ -123,7 +128,7 @@ fn get_list<'a>(items: Vec<FileName>) -> List<'a> {
 }
 
 fn get_list_items<'a>(items: Vec<FileName>) -> Vec<ListItem<'a>> {
-     items
+    items
         .into_iter()
         .map(|i| ListItem::new(i.to_value()))
         .collect::<Vec<ListItem>>()
@@ -136,7 +141,11 @@ fn ui_list_box(frame: &mut Frame, hflex: Rect, res: &mut Resource) {
         .constraints([Constraint::Percentage(100), Constraint::Min(3)])
         .split(hflex);
 
-    let mut list_items = res.get::<FileBuff>().names().map(Clone::clone).collect::<Vec<FileName>>();
+    let mut list_items = res
+        .get::<FileBuff>()
+        .names()
+        .map(Clone::clone)
+        .collect::<Vec<FileName>>();
     list_items.sort();
     let list = get_list(list_items);
     let state = res.get_mut::<FileListState>().get_mut();
@@ -147,7 +156,9 @@ fn ui_list_box(frame: &mut Frame, hflex: Rect, res: &mut Resource) {
 }
 
 fn ui_entry_box(frame: &mut Frame, lflex: Rect, res: &mut Resource) {
-    if !res.get::<EntryBox>().bool() { return }
+    if !res.get::<EntryBox>().bool() {
+        return;
+    }
 
     let mut len = res.get::<EntryBox>().len();
     let width = lflex.width.saturating_sub(2) as usize;
@@ -169,8 +180,5 @@ fn ui_entry_box(frame: &mut Frame, lflex: Rect, res: &mut Resource) {
         .alignment(Alignment::Left);
 
     frame.render_widget(entry_box, lflex);
-    frame.set_cursor(
-        lflex.left() + len.saturating_add(1) as u16,
-        lflex.top() + 1,
-    );
+    frame.set_cursor(lflex.left() + len.saturating_add(1) as u16, lflex.top() + 1);
 }

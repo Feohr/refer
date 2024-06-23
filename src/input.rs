@@ -1,14 +1,30 @@
-use std::cmp::{Eq, PartialEq, PartialOrd, Ordering};
-use std::collections::{HashMap, hash_map::Keys};
+use std::cmp::{Eq, Ordering, PartialEq, PartialOrd};
+use std::collections::{hash_map::Keys, HashMap};
+use std::ops::Add;
 use std::ops::Deref;
 
 use crossterm::event::*;
 use ratatui::widgets::*;
 
-use crate::resource::*;
 use crate::cursor::*;
+use crate::resource::*;
 
 pub const DELTA: u64 = 16;
+
+trait MaxedAdd<Rhs = Self> {
+    type Output;
+    fn max_add(self, other: Rhs, max: Rhs) -> Self::Output;
+}
+
+impl<T: Add<Output = T> + PartialOrd + Sized> MaxedAdd<T> for T {
+    type Output = T;
+    fn max_add(self, other: T, max: T) -> Self::Output {
+        if self < max {
+            return self.add(other);
+        }
+        self
+    }
+}
 
 pub struct EntryBox {
     is_active: bool,
@@ -112,13 +128,12 @@ impl FileBuff {
         self.table.keys()
     }
 
-    pub fn get_buffer(&self, value: &String) -> &String {
+    pub fn get_buffer(&self, index: usize) -> &String {
         self.table
-            .get(&FileName {
-                value: value.to_string(),
-                ..Default::default()
-            })
+            .iter()
+            .find(|(f, _)| f.index.eq(&index))
             .expect("Buffer not present for the file {name}")
+            .1
     }
 
     pub fn insert(&mut self, name: String) {
@@ -134,16 +149,42 @@ impl Deref for FileBuff {
     }
 }
 
-pub struct FileListState(pub ListState);
+pub struct FileListState {
+    size: usize,
+    pub index: usize,
+    pub state: ListState,
+}
 impl FileListState {
-    pub fn new() -> Self {
+    pub fn new(size: usize) -> Self {
         let mut state = ListState::default();
         state.select(Some(0));
-        FileListState(state)
+        FileListState {
+            size,
+            index: 0,
+            state,
+        }
+    }
+
+    pub fn set_size(&mut self, size: usize) {
+        self.size = size;
+    }
+
+    pub fn next(&mut self) {
+        self.index = self.index.max_add(1, self.size.saturating_sub(1));
+        self.state.select(Some(self.index));
+    }
+
+    pub fn prev(&mut self) {
+        self.index = self.index.saturating_sub(1);
+        self.state.select(Some(self.index));
+    }
+
+    pub fn index(&self) -> usize {
+        self.index
     }
 
     pub fn get_mut(&mut self) -> &mut ListState {
-        &mut self.0
+        &mut self.state
     }
 }
 
@@ -195,8 +236,7 @@ fn normal_key_event(event: Event, res: &mut Resource) {
         | Event::Key(KeyEvent {
             code: KeyCode::Char('h'),
             ..
-        })
-        => res.get_mut::<Pointer>().set_cursor::<Files>(),
+        }) => res.get_mut::<Pointer>().set_cursor::<Files>(),
         Event::Key(KeyEvent {
             code: KeyCode::Right,
             ..
@@ -204,8 +244,30 @@ fn normal_key_event(event: Event, res: &mut Resource) {
         | Event::Key(KeyEvent {
             code: KeyCode::Char('l'),
             ..
+        }) => res.get_mut::<Pointer>().set_cursor::<View>(),
+        Event::Key(KeyEvent {
+            code: KeyCode::Down,
+            ..
         })
-        => res.get_mut::<Pointer>().set_cursor::<View>(),
+        | Event::Key(KeyEvent {
+            code: KeyCode::Char('j'),
+            ..
+        }) => {
+            if res.get::<Pointer>().cursor_at::<Files>() {
+                res.get_mut::<FileListState>().next();
+            }
+        }
+        Event::Key(KeyEvent {
+            code: KeyCode::Up, ..
+        })
+        | Event::Key(KeyEvent {
+            code: KeyCode::Char('k'),
+            ..
+        }) => {
+            if res.get::<Pointer>().cursor_at::<Files>() {
+                res.get_mut::<FileListState>().prev();
+            }
+        }
         _ => {}
     }
 }
@@ -227,6 +289,10 @@ fn write_key_event(event: Event, res: &mut Resource) {
         }) => {
             let name = res.get_mut::<EntryBox>().take();
             res.get_mut::<FileBuff>().insert(name);
+
+            let len = res.get::<FileBuff>().len();
+            res.get_mut::<FileListState>().set_size(len);
+
             res.get_mut::<Pointer>().toggle();
             res.get_mut::<EntryBox>().toggle();
         }

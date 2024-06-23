@@ -5,8 +5,8 @@ mod ui;
 
 use std::io::{stdout, Stdout};
 use std::ops::Drop;
-use std::sync::{Arc, Mutex};
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use crossterm::{event::*, execute, terminal::*};
 use ratatui::prelude::*;
@@ -39,7 +39,9 @@ impl App {
         let mut resource = init_resource()?;
 
         loop {
-            if key_listener(&mut resource)? { break }
+            if key_listener(&mut resource)? {
+                break;
+            }
             self.terminal.draw(|f| ui::ui(f, &mut resource))?;
         }
 

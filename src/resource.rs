@@ -3,8 +3,8 @@ use std::collections::HashMap;
 
 use clap::Parser;
 
-use crate::input::*;
 use crate::cursor::*;
+use crate::input::*;
 
 #[derive(Default)]
 pub struct Resource {
@@ -56,12 +56,13 @@ struct Refer {
 
 pub fn init_resource() -> anyhow::Result<Resource> {
     let args = Refer::parse();
+    let file_buff = FileBuff::with_files(args.filename);
 
     let mut resource = Resource::default();
     resource.insert(Pointer::new());
     resource.insert(EntryBox::new());
-    resource.insert(FileBuff::with_files(args.filename));
-    resource.insert(FileListState::new());
+    resource.insert(FileListState::new(file_buff.len()));
+    resource.insert(file_buff);
 
     Ok(resource)
 }
