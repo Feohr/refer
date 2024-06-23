@@ -1,5 +1,12 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, hash_map::Keys};
 use std::ops::Deref;
+
+use crossterm::event::*;
+
+use crate::resource::*;
+use crate::cursor::*;
+
+pub const DELTA: u64 = 16;
 
 pub struct EntryBox {
     is_active: bool,
@@ -59,6 +66,10 @@ pub struct FileBuff {
 }
 
 impl FileBuff {
+    pub fn names(&self) -> Keys<'_, String, String> {
+        self.table.keys()
+    }
+
     pub fn get(&self, name: &String) -> &String {
         self.table
             .get(name)
@@ -74,5 +85,100 @@ impl Deref for FileBuff {
     type Target = HashMap<String, String>;
     fn deref(&self) -> &Self::Target {
         &self.table
+    }
+}
+
+pub fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
+    if poll(std::time::Duration::from_millis(DELTA))? {
+        let event = read()?;
+        if quit_listener(&event) {
+            return Ok(true);
+        }
+        match res.get::<EntryBox>().bool() {
+            true => write_key_event(event, res),
+            false => normal_key_event(event, res),
+        }
+    }
+
+    Ok(false)
+}
+
+fn quit_listener(event: &Event) -> bool {
+    match event {
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('q'),
+            ..
+        })
+        | Event::Key(KeyEvent {
+            code: KeyCode::Esc,
+            modifiers: KeyModifiers::NONE,
+            ..
+        }) => return true,
+        _ => {}
+    }
+    false
+}
+
+fn normal_key_event(event: Event, res: &mut Resource) {
+    match event {
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('n'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => {
+            res.get_mut::<Pointer>().toggle();
+            res.get_mut::<EntryBox>().toggle();
+        }
+        Event::Key(KeyEvent {
+            code: KeyCode::Left,
+            ..
+        })
+        | Event::Key(KeyEvent {
+            code: KeyCode::Char('h'),
+            ..
+        })
+        => res.get_mut::<Pointer>().set_cursor::<Files>(),
+        Event::Key(KeyEvent {
+            code: KeyCode::Right,
+            ..
+        })
+        | Event::Key(KeyEvent {
+            code: KeyCode::Char('l'),
+            ..
+        })
+        => res.get_mut::<Pointer>().set_cursor::<View>(),
+        _ => {}
+    }
+}
+
+fn write_key_event(event: Event, res: &mut Resource) {
+    match event {
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('n'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => {
+            res.get_mut::<Pointer>().toggle();
+            res.get_mut::<EntryBox>().clear();
+            res.get_mut::<EntryBox>().toggle();
+        }
+        Event::Key(KeyEvent {
+            code: KeyCode::Enter,
+            ..
+        }) => {
+            let name = res.get_mut::<EntryBox>().take();
+            res.get_mut::<FileBuff>().insert(name);
+            res.get_mut::<Pointer>().toggle();
+            res.get_mut::<EntryBox>().toggle();
+        }
+        Event::Key(KeyEvent {
+            code: KeyCode::Backspace,
+            ..
+        }) => res.get_mut::<EntryBox>().pop(),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char(c),
+            ..
+        }) => res.get_mut::<EntryBox>().push(c),
+        _ => {}
     }
 }

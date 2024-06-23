@@ -1,66 +1,84 @@
-use std::io::Stdout;
-
-use tui::{backend::CrosstermBackend, layout::*, style::*, text::*, widgets::*, Frame};
+use ratatui::{border, prelude::*, widgets::*};
 
 use crate::cursor::*;
-use crate::input::*;
-use crate::resource::*;
+use crate::input::*; use crate::resource::*;
+use crate::RectVec;
+
+pub const FG: Color = Color::Rgb(221, 221, 221);
+pub const BG: Color = Color::Rgb(53, 53, 53);
+pub const DBG: Color = Color::Rgb(30, 30, 30);
+pub const POINT: Color = Color::Rgb(127, 127, 127);
 
 pub const BLOCK: Style = Style {
-    fg: Some(Color::White),
+    fg: Some(POINT),
     bg: None,
+    underline_color: None,
     add_modifier: Modifier::empty(),
     sub_modifier: Modifier::empty(),
 };
 pub const INVISIBLE: Style = Style {
-    fg: Some(Color::Black),
+    fg: None,
     bg: None,
+    underline_color: None,
     add_modifier: Modifier::empty(),
     sub_modifier: Modifier::empty(),
 };
 pub const FADE: Style = Style {
-    fg: Some(Color::Rgb(89, 89, 89)),
+    fg: Some(BG),
     bg: None,
+    underline_color: None,
     add_modifier: Modifier::empty(),
     sub_modifier: Modifier::empty(),
 };
 
-fn headers<'a>() -> Vec<Spans<'a>> {
-    vec![
-        Spans::from("Press 'ctrl + q'/'ctrl + c' to quit"),
-        Spans::from("'ctrl + n' to add a new file"),
-        Spans::from("'ctrl + up' to go to top of the file"),
-        Spans::from("'ctrl + down' to go to bottom of the file"),
-        Spans::from("'ctrl + t' to toggle tail mode"),
-    ]
+fn headers<'a>() -> Line<'a> {
+    Line::from(vec![
+        Span::from("(Esc or q) quit"),
+        Span::from("  │  "),
+        Span::from("(n) new file"),
+        Span::from("  │  "),
+        Span::from("(d) delete file"),
+        Span::from("  │  "),
+        Span::from("(ctrl) + (j or ↑) up"),
+        Span::from("  │  "),
+        Span::from("(ctrl) + (k or ↓) down"),
+        Span::from("  │  "),
+        Span::from("(t) toggle tailing"),
+    ])
 }
 
-pub fn ui(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, res: &Resource) {
+pub fn ui(frame: &mut Frame, res: &Resource) {
     let size = frame.size();
 
     let vflex = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(5), Constraint::Percentage(95)])
+        .constraints([Constraint::Min(3), Constraint::Percentage(100)])
         .split(size);
 
     ui_main(frame, vflex, res);
 }
 
-fn ui_main(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, vflex: Vec<Rect>, res: &Resource) {
+fn ui_main(frame: &mut Frame, vflex: RectVec, res: &Resource) {
     let hflex = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)])
+        .constraints([Constraint::Min(40), Constraint::Percentage(100)])
         .split(vflex[1]);
 
     ui_text(frame, hflex, res);
     ui_header(frame, vflex[0]);
 }
 
-fn ui_header(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, fflex: Rect) {
-    frame.render_widget(Tabs::new(headers()), fflex);
+fn ui_header(frame: &mut Frame, fflex: Rect) {
+    frame.render_widget(
+        Paragraph::new(headers())
+        .centered()
+        .block(Block::default().borders(border!(ALL)).border_style(Style::default().bg(BG)))
+        .style(Style::default().bg(BG).fg(FG)),
+        fflex,
+    );
 }
 
-fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, res: &Resource) {
+fn ui_text(frame: &mut Frame, hflex: RectVec, res: &Resource) {
     let cursor = res.get::<Pointer>();
     let text_shade = if cursor.cursor_at::<View>() {
         BLOCK
@@ -75,10 +93,10 @@ fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, re
 
     frame.render_widget(
         Block::default()
-            .borders(Borders::ALL)
+            .borders(border!(ALL))
             .border_style(list_shade)
-            .border_type(BorderType::Thick)
-            .style(Style::default()),
+            .border_type(BorderType::QuadrantOutside)
+            .style(Style::default().bg(DBG).fg(FG)),
         hflex[0],
     );
 
@@ -87,26 +105,26 @@ fn ui_text(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Vec<Rect>, re
     frame.render_widget(
         Paragraph::new(vec![]).block(
             Block::default()
-                .borders(Borders::ALL)
+                .borders(border!(ALL))
                 .border_style(text_shade)
-                .border_type(BorderType::Thick)
-                .style(Style::default()),
+                .border_type(BorderType::QuadrantOutside)
+                .style(Style::default().bg(DBG).fg(FG)),
         ),
         hflex[1],
     );
 }
 
-fn ui_list_box(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Rect, res: &Resource) {
+fn ui_list_box(frame: &mut Frame, hflex: Rect, res: &Resource) {
     let lflex = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
-        .constraints([Constraint::Percentage(92), Constraint::Percentage(8)])
+        .constraints([Constraint::Percentage(100), Constraint::Min(3)])
         .split(hflex);
 
-    let items = res.get::<FileBuff>().iter();
+    let items = res.get::<FileBuff>().names();
     let list = List::new(
         items
-            .map(|(i, _)| ListItem::new(i.as_str()))
+            .map(|i| ListItem::new(i.as_str()))
             .collect::<Vec<ListItem>>(),
     )
     .block(Block::default().border_style(INVISIBLE))
@@ -114,30 +132,34 @@ fn ui_list_box(frame: &mut Frame<'_, CrosstermBackend<Stdout>>, hflex: Rect, res
 
     frame.render_widget(list, lflex[0]);
 
-    if res.get::<EntryBox>().bool() {
-        let mut len = res.get::<EntryBox>().len();
-        let width = lflex[1].width.saturating_sub(2) as usize;
+    ui_entry_box(frame, lflex[1], res);
+}
 
-        if len >= width {
-            len = width.saturating_sub(1);
-        }
+fn ui_entry_box(frame: &mut Frame, lflex: Rect, res: &Resource) {
+    if !res.get::<EntryBox>().bool() { return }
 
-        let entry_text = res.get::<EntryBox>().get_span(width);
+    let mut len = res.get::<EntryBox>().len();
+    let width = lflex.width.saturating_sub(2) as usize;
 
-        let entry_box = Paragraph::new(entry_text)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(BLOCK)
-                    .style(Style::default()),
-            )
-            .wrap(Wrap { trim: true })
-            .alignment(Alignment::Left);
-
-        frame.render_widget(entry_box, lflex[1]);
-        frame.set_cursor(
-            lflex[1].left() + len.saturating_add(1) as u16,
-            lflex[1].top() + 1,
-        );
+    if len >= width {
+        len = width.saturating_sub(1);
     }
+
+    let entry_text = res.get::<EntryBox>().get_span(width);
+
+    let entry_box = Paragraph::new(entry_text)
+        .block(
+            Block::default()
+                .borders(border!(ALL))
+                .border_style(BLOCK)
+                .style(Style::default()),
+        )
+        .wrap(Wrap { trim: true })
+        .alignment(Alignment::Left);
+
+    frame.render_widget(entry_box, lflex);
+    frame.set_cursor(
+        lflex.left() + len.saturating_add(1) as u16,
+        lflex.top() + 1,
+    );
 }

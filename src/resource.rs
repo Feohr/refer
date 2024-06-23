@@ -1,6 +1,11 @@
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 
+use clap::Parser;
+
+use crate::input::*;
+use crate::cursor::*;
+
 #[derive(Default)]
 pub struct Resource {
     _inner: HashMap<TypeId, Box<dyn Any>>,
@@ -41,4 +46,22 @@ impl Resource {
             .downcast_mut::<T>()
             .expect("Error while downcasting to &{type_nm}")
     }
+}
+
+#[derive(Parser)]
+#[command(about, long_about=None)]
+struct Refer {
+    filename: Vec<String>,
+}
+
+pub fn init_resource() -> anyhow::Result<Resource> {
+    let args = Refer::parse();
+
+    let mut resource = Resource::default();
+    resource.insert(args.filename);
+    resource.insert(Pointer::new());
+    resource.insert(EntryBox::new());
+    resource.insert(FileBuff::default());
+
+    Ok(resource)
 }

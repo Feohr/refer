@@ -6,22 +6,15 @@ mod ui;
 use std::io::{stdout, Stdout};
 use std::ops::Drop;
 use std::sync::{Arc, Mutex};
+use std::rc::Rc;
 
-use clap::Parser;
 use crossterm::{event::*, execute, terminal::*};
-use tui::{backend::CrosstermBackend, Terminal};
+use ratatui::prelude::*;
 
-use crate::cursor::*;
 use crate::input::*;
 use crate::resource::*;
 
-pub const DELTA: u64 = 16;
-
-#[derive(Parser)]
-#[command(about, long_about=None)]
-struct Refer {
-    filename: Vec<String>,
-}
+pub type RectVec = Rc<[Rect]>;
 
 pub struct App {
     terminal: Terminal<CrosstermBackend<Stdout>>,
@@ -46,12 +39,11 @@ impl App {
         let mut resource = init_resource()?;
 
         loop {
-            if key_listener(&mut resource)? {
-                return Ok(());
-            }
-
+            if key_listener(&mut resource)? { break }
             self.terminal.draw(|f| ui::ui(f, &resource))?;
         }
+
+        Ok(())
     }
 }
 
@@ -68,106 +60,7 @@ impl Drop for App {
     }
 }
 
-fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
-    if poll(std::time::Duration::from_millis(DELTA))? {
-        let event = read()?;
-        if quit_listener(&event) {
-            return Ok(true);
-        }
-        match res.get::<EntryBox>().bool() {
-            true => write_key_event(event, res),
-            false => normal_key_event(event, res),
-        }
-    }
-
-    Ok(false)
-}
-
-fn quit_listener(event: &Event) -> bool {
-    match event {
-        Event::Key(KeyEvent {
-            code: KeyCode::Char('q'),
-            modifiers: KeyModifiers::CONTROL,
-            ..
-        })
-        | Event::Key(KeyEvent {
-            code: KeyCode::Char('c'),
-            modifiers: KeyModifiers::CONTROL,
-            ..
-        }) => return true,
-        _ => {}
-    }
-    false
-}
-
-fn normal_key_event(event: Event, res: &mut Resource) {
-    match event {
-        Event::Key(KeyEvent {
-            code: KeyCode::Char('n'),
-            modifiers: KeyModifiers::CONTROL,
-            ..
-        }) => {
-            res.get_mut::<Pointer>().toggle();
-            res.get_mut::<EntryBox>().toggle();
-        }
-        Event::Key(KeyEvent {
-            code: KeyCode::Left,
-            ..
-        }) => res.get_mut::<Pointer>().set_cursor::<Files>(),
-        Event::Key(KeyEvent {
-            code: KeyCode::Right,
-            ..
-        }) => res.get_mut::<Pointer>().set_cursor::<View>(),
-        _ => {}
-    }
-}
-
-fn write_key_event(event: Event, res: &mut Resource) {
-    match event {
-        Event::Key(KeyEvent {
-            code: KeyCode::Char('n'),
-            modifiers: KeyModifiers::CONTROL,
-            ..
-        }) => {
-            res.get_mut::<Pointer>().toggle();
-            res.get_mut::<EntryBox>().clear();
-            res.get_mut::<EntryBox>().toggle();
-        }
-        Event::Key(KeyEvent {
-            code: KeyCode::Enter,
-            ..
-        }) => {
-            let name = res.get_mut::<EntryBox>().take();
-            res.get_mut::<FileBuff>().insert(name);
-            res.get_mut::<Pointer>().toggle();
-            res.get_mut::<EntryBox>().toggle();
-        }
-        Event::Key(KeyEvent {
-            code: KeyCode::Backspace,
-            ..
-        }) => res.get_mut::<EntryBox>().pop(),
-        Event::Key(KeyEvent {
-            code: KeyCode::Char(c),
-            ..
-        }) => res.get_mut::<EntryBox>().push(c),
-        _ => {}
-    }
-}
-
-fn init_resource() -> anyhow::Result<Resource> {
-    let args = Refer::parse();
-
-    let mut resource = Resource::default();
-    resource.insert(args.filename);
-    resource.insert(Pointer::new());
-    resource.insert(EntryBox::new());
-    resource.insert(FileBuff::default());
-
-    Ok(resource)
-}
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     let panic_buff = Arc::new(Mutex::new(String::new()));
 
     let old_hook = std::panic::take_hook();
