@@ -21,7 +21,7 @@ pub struct App {
 }
 impl App {
     pub fn new() -> anyhow::Result<Self> {
-        enable_raw_mode().unwrap();
+        enable_raw_mode().expect("Couldn't enable raw terminal mode");
 
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend)?;
@@ -51,14 +51,16 @@ impl App {
 
 impl Drop for App {
     fn drop(&mut self) {
-        disable_raw_mode().unwrap();
+        disable_raw_mode().expect("Couldn't disable raw terminal mode");
         execute!(
             self.terminal.backend_mut(),
             LeaveAlternateScreen,
             DisableMouseCapture,
         )
-        .unwrap();
-        self.terminal.show_cursor().unwrap();
+        .expect("Ran into issue while leaving the alternate screen");
+        self.terminal
+            .show_cursor()
+            .expect("Couldn't toggle the cursor back");
     }
 }
 
@@ -70,7 +72,9 @@ fn main() -> anyhow::Result<()> {
     std::panic::set_hook({
         let panic_buff = panic_buff.clone();
         Box::new(move |info| {
-            let mut panic_buff = panic_buff.lock().unwrap();
+            let mut panic_buff = panic_buff
+                .lock()
+                .expect("Couldn't get lock on error buffer");
             let msg = match info.payload().downcast_ref::<&'static str>() {
                 Some(s) => *s,
                 None => match info.payload().downcast_ref::<String>() {
@@ -97,7 +101,14 @@ fn main() -> anyhow::Result<()> {
 
     match res {
         Ok(res) => res,
-        Err(_) => return Err(anyhow::anyhow!("{}", panic_buff.lock().unwrap())),
+        Err(_) => {
+            return Err(anyhow::anyhow!(
+                "{}",
+                panic_buff
+                    .lock()
+                    .expect("Couldn't get lock on error buffer")
+            ))
+        }
     }
 
     Ok(())
