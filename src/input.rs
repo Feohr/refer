@@ -204,7 +204,7 @@ pub fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
         if quit_listener(&event) {
             return Ok(true);
         }
-        match res.get::<EntryBox>().bool() {
+        match res.entry_box().bool() {
             true => write_key_event(event, res),
             false => normal_key_event(event, res),
         }
@@ -217,11 +217,7 @@ fn quit_listener(event: &Event) -> bool {
     match event {
         Event::Key(KeyEvent {
             code: KeyCode::Char('q'),
-            ..
-        })
-        | Event::Key(KeyEvent {
-            code: KeyCode::Esc,
-            modifiers: KeyModifiers::NONE,
+            modifiers: KeyModifiers::CONTROL,
             ..
         }) => return true,
         _ => {}
@@ -236,8 +232,8 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             modifiers: KeyModifiers::CONTROL,
             ..
         }) => {
-            res.get_mut::<Pointer>().toggle();
-            res.get_mut::<EntryBox>().toggle();
+            res.pointer_mut().toggle();
+            res.entry_box_mut().toggle();
         }
         Event::Key(KeyEvent {
             code: KeyCode::Left,
@@ -246,7 +242,7 @@ fn normal_key_event(event: Event, res: &mut Resource) {
         | Event::Key(KeyEvent {
             code: KeyCode::Char('h'),
             ..
-        }) => res.get_mut::<Pointer>().set_cursor::<Files>(),
+        }) => res.pointer_mut().set_cursor::<Files>(),
         Event::Key(KeyEvent {
             code: KeyCode::Right,
             ..
@@ -254,7 +250,7 @@ fn normal_key_event(event: Event, res: &mut Resource) {
         | Event::Key(KeyEvent {
             code: KeyCode::Char('l'),
             ..
-        }) => res.get_mut::<Pointer>().set_cursor::<View>(),
+        }) => res.pointer_mut().set_cursor::<View>(),
         Event::Key(KeyEvent {
             code: KeyCode::Down,
             modifiers: KeyModifiers::NONE,
@@ -265,8 +261,8 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             modifiers: KeyModifiers::NONE,
             ..
         }) => {
-            if res.get::<Pointer>().cursor_at::<Files>() {
-                res.get_mut::<FileListState>().next();
+            if res.pointer().cursor_at::<Files>() {
+                res.file_list_state_mut().next();
             }
         }
         Event::Key(KeyEvent {
@@ -279,8 +275,8 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             modifiers: KeyModifiers::NONE,
             ..
         }) => {
-            if res.get::<Pointer>().cursor_at::<Files>() {
-                res.get_mut::<FileListState>().prev();
+            if res.pointer().cursor_at::<Files>() {
+                res.file_list_state_mut().prev();
             }
         }
         Event::Key(KeyEvent {
@@ -293,8 +289,8 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             modifiers: KeyModifiers::CONTROL,
             ..
         }) => {
-            if res.get::<Pointer>().cursor_at::<Files>() {
-                res.get_mut::<FileListState>().bottom();
+            if res.pointer().cursor_at::<Files>() {
+                res.file_list_state_mut().bottom();
             }
         }
         Event::Key(KeyEvent {
@@ -307,8 +303,8 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             modifiers: KeyModifiers::CONTROL,
             ..
         }) => {
-            if res.get::<Pointer>().cursor_at::<Files>() {
-                res.get_mut::<FileListState>().top();
+            if res.pointer().cursor_at::<Files>() {
+                res.file_list_state_mut().top();
             }
         }
         _ => {}
@@ -321,32 +317,40 @@ fn write_key_event(event: Event, res: &mut Resource) {
             code: KeyCode::Char('n'),
             modifiers: KeyModifiers::CONTROL,
             ..
-        }) => {
-            res.get_mut::<Pointer>().toggle();
-            res.get_mut::<EntryBox>().clear();
-            res.get_mut::<EntryBox>().toggle();
+        })
+        | Event::Key(KeyEvent {
+            code: KeyCode::Esc,
+            modifiers: KeyModifiers::NONE,
+            ..
+        })
+        => {
+            res.pointer_mut().toggle();
+            res.entry_box_mut().clear();
+            res.entry_box_mut().toggle();
         }
         Event::Key(KeyEvent {
             code: KeyCode::Enter,
             ..
         }) => {
-            let name = res.get_mut::<EntryBox>().take();
-            res.get_mut::<FileBuff>().insert(name);
+            let name = res.entry_box_mut().take();
 
-            let len = res.get::<FileBuff>().len();
-            res.get_mut::<FileListState>().set_size(len);
+            if !name.is_empty() {
+                res.file_buff_mut().insert(name);
+                let len = res.file_buff().len();
+                res.file_list_state_mut().set_size(len);
+            }
 
-            res.get_mut::<Pointer>().toggle();
-            res.get_mut::<EntryBox>().toggle();
+            res.pointer_mut().toggle();
+            res.entry_box_mut().toggle();
         }
         Event::Key(KeyEvent {
             code: KeyCode::Backspace,
             ..
-        }) => res.get_mut::<EntryBox>().pop(),
+        }) => res.entry_box_mut().pop(),
         Event::Key(KeyEvent {
             code: KeyCode::Char(c),
             ..
-        }) => res.get_mut::<EntryBox>().push(c),
+        }) => res.entry_box_mut().push(c),
         _ => {}
     }
 }

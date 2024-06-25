@@ -35,17 +35,17 @@ pub const FADE: Style = Style {
 
 fn headers<'a>() -> Line<'a> {
     Line::from(vec![
-        Span::from("(Esc or q) quit"),
+        Span::from("(ctrl) + (q) quit"),
         Span::from("  │  "),
-        Span::from("(n) new file"),
+        Span::from("(ctrl) + (n) new file"),
         Span::from("  │  "),
-        Span::from("(d) delete file"),
+        Span::from("(ctrl) + (d) delete file"),
         Span::from("  │  "),
         Span::from("(ctrl) + (j or ↑) up"),
         Span::from("  │  "),
         Span::from("(ctrl) + (k or ↓) down"),
         Span::from("  │  "),
-        Span::from("(t) toggle tailing"),
+        Span::from("(ctrl) + (t) toggle tailing"),
     ])
 }
 
@@ -85,7 +85,7 @@ fn ui_header(frame: &mut Frame, fflex: Rect) {
 }
 
 fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
-    let cursor = res.get::<Pointer>();
+    let cursor = res.pointer();
     let text_shade = if cursor.cursor_at::<View>() {
         BLOCK
     } else {
@@ -142,13 +142,13 @@ fn ui_list_box(frame: &mut Frame, hflex: Rect, res: &mut Resource) {
         .split(hflex);
 
     let mut list_items = res
-        .get::<FileBuff>()
+        .file_buff()
         .names()
         .map(Clone::clone)
         .collect::<Vec<FileName>>();
     list_items.sort();
     let list = get_list(list_items);
-    let state = res.get_mut::<FileListState>().get_mut();
+    let state = res.file_list_state_mut().get_mut();
 
     frame.render_stateful_widget(list, lflex[0], state);
 
@@ -156,18 +156,18 @@ fn ui_list_box(frame: &mut Frame, hflex: Rect, res: &mut Resource) {
 }
 
 fn ui_entry_box(frame: &mut Frame, lflex: Rect, res: &mut Resource) {
-    if !res.get::<EntryBox>().bool() {
+    if !res.entry_box().bool() {
         return;
     }
 
-    let mut len = res.get::<EntryBox>().len();
+    let mut len = res.entry_box().len();
     let width = lflex.width.saturating_sub(2) as usize;
 
     if len >= width {
         len = width.saturating_sub(1);
     }
 
-    let entry_text = res.get::<EntryBox>().get_span(width);
+    let entry_text = res.entry_box().get_span(width);
 
     let entry_box = Paragraph::new(entry_text)
         .block(

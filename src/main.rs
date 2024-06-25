@@ -36,7 +36,7 @@ impl App {
             EnableMouseCapture
         )?;
 
-        let mut resource = init_resource()?;
+        let mut resource = Resource::new();
 
         loop {
             if key_listener(&mut resource)? {

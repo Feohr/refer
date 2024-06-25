@@ -1,50 +1,58 @@
-use std::any::{Any, TypeId};
-use std::collections::HashMap;
-
 use clap::Parser;
 
 use crate::cursor::*;
 use crate::input::*;
 
-#[derive(Default)]
 pub struct Resource {
-    _inner: HashMap<TypeId, Box<dyn Any>>,
+    pub pointer: Pointer,
+    pub entry_box: EntryBox,
+    pub file_list_state: FileListState,
+    pub file_buff: FileBuff,
 }
 
 impl Resource {
-    pub fn insert<T: 'static>(&mut self, item: T) {
-        let id = std::any::TypeId::of::<T>();
-        if self._inner.get(&id).is_some() {
-            panic!(
-                "Resource of type {} is already present",
-                std::any::type_name::<T>()
-            );
+    pub fn new() -> Self {
+        let args = Refer::parse();
+        let file_buff = FileBuff::with_files(args.filename);
+
+        Resource {
+            pointer: Pointer::new(),
+            entry_box: EntryBox::new(),
+            file_list_state: FileListState::new(file_buff.len()),
+            file_buff,
         }
-        self._inner.insert(id, Box::new(item));
     }
 
-    pub fn get<'a, T: 'static>(&'a self) -> &'a T {
-        let id = std::any::TypeId::of::<T>();
-
-        let type_nm = std::any::type_name::<T>();
-
-        self._inner
-            .get(&id)
-            .expect(&format!("The resource {type_nm} was never allocated"))
-            .downcast_ref::<T>()
-            .expect("Error while downcasting to &{type_nm}")
+    pub fn pointer(&self) -> &Pointer {
+        &self.pointer
     }
 
-    pub fn get_mut<'a, T: 'static>(&'a mut self) -> &'a mut T {
-        let id = std::any::TypeId::of::<T>();
+    pub fn entry_box(&self) -> &EntryBox {
+        &self.entry_box
+    }
 
-        let type_nm = std::any::type_name::<T>();
+    pub fn file_list_state(&self) -> &FileListState {
+        &self.file_list_state
+    }
 
-        self._inner
-            .get_mut(&id)
-            .expect(&format!("The resource {type_nm} was never allocated"))
-            .downcast_mut::<T>()
-            .expect("Error while downcasting to &{type_nm}")
+    pub fn file_buff(&self) -> &FileBuff {
+        &self.file_buff
+    }
+
+    pub fn pointer_mut(&mut self) -> &mut Pointer {
+        &mut self.pointer
+    }
+
+    pub fn entry_box_mut(&mut self) -> &mut EntryBox {
+        &mut self.entry_box
+    }
+
+    pub fn file_list_state_mut(&mut self) -> &mut FileListState {
+        &mut self.file_list_state
+    }
+
+    pub fn file_buff_mut(&mut self) -> &mut FileBuff {
+        &mut self.file_buff
     }
 }
 
@@ -52,17 +60,4 @@ impl Resource {
 #[command(about, long_about=None)]
 struct Refer {
     filename: Vec<String>,
-}
-
-pub fn init_resource() -> anyhow::Result<Resource> {
-    let args = Refer::parse();
-    let file_buff = FileBuff::with_files(args.filename);
-
-    let mut resource = Resource::default();
-    resource.insert(Pointer::new());
-    resource.insert(EntryBox::new());
-    resource.insert(FileListState::new(file_buff.len()));
-    resource.insert(file_buff);
-
-    Ok(resource)
 }
