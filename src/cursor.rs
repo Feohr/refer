@@ -1,13 +1,9 @@
 use std::any::TypeId;
 
+/// To denote where the current cursor is located.
 pub struct KeyboardCursor {
     toggle: Option<TypeId>,
     curr: TypeId,
-}
-
-pub enum Mode {
-    Text,
-    List,
 }
 
 impl KeyboardCursor {
@@ -41,5 +37,7 @@ impl KeyboardCursor {
     }
 }
 
+/// The cursor is on file list.
 pub struct Files;
+/// the cursor is on text view.
 pub struct View;

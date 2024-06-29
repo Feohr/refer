@@ -5,29 +5,28 @@ use crate::resource::*;
 use crate::io::*;
 use crate::RectVec;
 
-pub const FG: Color = Color::Rgb(221, 221, 221);
-pub const BG: Color = Color::Rgb(53, 53, 53);
-pub const DBG: Color = Color::Rgb(30, 30, 30);
-pub const POINT: Color = Color::Rgb(127, 127, 127);
-pub const LHI: Color = Color::Rgb(47, 47, 47);
+const BORDER: BorderType = BorderType::Rounded;
+const RFG: Color = Color::Gray;
+const RBG: Color = Color::Rgb(20, 20, 20);
+const DFG: Color = Color::Rgb(100, 100, 100);
 
-pub const BLOCK: Style = Style {
-    fg: Some(POINT),
-    bg: None,
+const BLOCK: Style = Style {
+    fg: Some(RFG),
+    bg: Some(RBG),
     underline_color: None,
     add_modifier: Modifier::empty(),
     sub_modifier: Modifier::empty(),
 };
-pub const INVISIBLE: Style = Style {
+const INVISIBLE: Style = Style {
     fg: None,
     bg: None,
     underline_color: None,
     add_modifier: Modifier::empty(),
     sub_modifier: Modifier::empty(),
 };
-pub const FADE: Style = Style {
-    fg: Some(BG),
-    bg: None,
+const FADE: Style = Style {
+    fg: Some(DFG),
+    bg: Some(RBG),
     underline_color: None,
     add_modifier: Modifier::empty(),
     sub_modifier: Modifier::empty(),
@@ -68,6 +67,7 @@ fn ui_main(frame: &mut Frame, vflex: RectVec, res: &mut Resource) {
 
     ui_text(frame, hflex, res);
     ui_header(frame, vflex[0]);
+
 }
 
 fn ui_header(frame: &mut Frame, fflex: Rect) {
@@ -77,9 +77,10 @@ fn ui_header(frame: &mut Frame, fflex: Rect) {
             .block(
                 Block::default()
                     .borders(border!(ALL))
-                    .border_style(Style::default().bg(BG)),
+                    .border_type(BORDER)
+                    .border_style(Style::default().fg(RFG).bg(RBG)),
             )
-            .style(Style::default().bg(BG).fg(FG)),
+            .style(Style::default().bg(RBG).fg(RFG)),
         fflex,
     );
 }
@@ -101,8 +102,8 @@ fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
         Block::default()
             .borders(border!(ALL))
             .border_style(list_shade)
-            .border_type(BorderType::QuadrantOutside)
-            .style(Style::default().bg(DBG).fg(FG)),
+            .border_type(BORDER)
+            .style(Style::default().bg(RBG).fg(RFG)),
         hflex[0],
     );
 
@@ -113,8 +114,8 @@ fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
             Block::default()
                 .borders(border!(ALL))
                 .border_style(text_shade)
-                .border_type(BorderType::QuadrantOutside)
-                .style(Style::default().bg(DBG).fg(FG)),
+                .border_type(BORDER)
+                .style(Style::default().bg(RBG).fg(RFG)),
         ),
         hflex[1],
     );
@@ -124,7 +125,7 @@ fn get_list<'a>(items: &'a [&'a FileName]) -> List<'a> {
     List::new(get_list_items(items))
         .block(Block::default().border_style(INVISIBLE))
         .highlight_symbol(" ► ")
-        .highlight_style(Style::default().bg(LHI))
+        .highlight_style(Style::default().fg(RBG).bg(DFG))
 }
 
 fn get_list_items<'a>(items: &'a [&'a FileName]) -> Vec<ListItem<'a>> {
@@ -175,7 +176,7 @@ fn ui_entry_box(frame: &mut Frame, lflex: Rect, res: &mut Resource) {
             Block::default()
                 .borders(border!(ALL))
                 .border_style(BLOCK)
-                .style(Style::default()),
+                .border_type(BORDER)
         )
         .wrap(Wrap { trim: true })
         .alignment(Alignment::Left);

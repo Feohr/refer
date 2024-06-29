@@ -9,19 +9,11 @@ use crate::resource::*;
 
 pub const DELTA: u64 = 16;
 
-trait MaxedAdd<Rhs = Self> {
-    type Output;
-    fn max_add(self, other: Rhs, max: Rhs) -> Self::Output;
-}
-
-impl<T: Add<Output = T> + PartialOrd + Sized> MaxedAdd<T> for T {
-    type Output = T;
-    fn max_add(self, other: T, max: T) -> Self::Output {
-        if self < max {
-            return self.add(other);
-        }
-        self
+fn max_add<T: Add<Output=T> + PartialOrd>(value: T, other: T, max: T) -> T {
+    if value < max {
+        return value.add(other);
     }
+    value
 }
 
 pub struct EntryBox {
@@ -97,7 +89,7 @@ impl FileListState {
     }
 
     pub fn next(&mut self) {
-        self.index = self.index.max_add(1, self.size.saturating_sub(1));
+        self.index = max_add(self.index, 1, self.size.saturating_sub(1));
         self.state.select(Some(self.index));
     }
 

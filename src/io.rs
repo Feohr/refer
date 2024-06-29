@@ -60,36 +60,3 @@ impl FileList {
         self.table.push(FileName::new(name, len));
     }
 }
-
-// /// Window for file content. The variables `start` and `end` correspond to the number of lines to
-// /// display in the text box.
-// struct BufWin {
-//     start: usize,
-//     end: usize,
-//     len: usize,
-//     tail: bool,
-//     reader: Option<BufReader<File>>,
-//     pub src: String,
-// }
-// 
-// impl BufWin {
-//     fn new(path: &str, tail: bool) -> anyhow::Result<Self> {
-//         let reader = BufReader::new(File::open(path)?);
-// 
-//         Ok(BufWin {
-//             start: 0,
-//             end: 0,
-//             len: 0,
-//             tail,
-//             reader: Some(reader),
-//             src: String::new(),
-//         })
-//     }
-// 
-//     pub fn update(&mut self) -> anyhow::Result<()> {
-//         if let Some(ref mut reader) = self.reader {
-//             reader.read_line(&mut self.src)?;
-//         }
-//         Ok(())
-//     }
-// }
