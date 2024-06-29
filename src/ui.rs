@@ -1,8 +1,8 @@
 use ratatui::{border, prelude::*, widgets::*};
 
 use crate::cursor::*;
-use crate::input::*;
 use crate::resource::*;
+use crate::io::*;
 use crate::RectVec;
 
 pub const FG: Color = Color::Rgb(221, 221, 221);
@@ -120,17 +120,17 @@ fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
     );
 }
 
-fn get_list<'a>(items: Vec<FileName>) -> List<'a> {
+fn get_list<'a>(items: &'a [&'a FileName]) -> List<'a> {
     List::new(get_list_items(items))
         .block(Block::default().border_style(INVISIBLE))
         .highlight_symbol(" ► ")
         .highlight_style(Style::default().bg(LHI))
 }
 
-fn get_list_items<'a>(items: Vec<FileName>) -> Vec<ListItem<'a>> {
+fn get_list_items<'a>(items: &'a [&'a FileName]) -> Vec<ListItem<'a>> {
     items
         .into_iter()
-        .map(|i| ListItem::new(i.to_value()))
+        .map(|i| ListItem::new(i.value()))
         .collect::<Vec<ListItem>>()
 }
 
@@ -141,22 +141,23 @@ fn ui_list_box(frame: &mut Frame, hflex: Rect, res: &mut Resource) {
         .constraints([Constraint::Percentage(100), Constraint::Min(3)])
         .split(hflex);
 
-    let mut list_items = res
-        .file_buff()
-        .names()
-        .map(Clone::clone)
-        .collect::<Vec<FileName>>();
-    list_items.sort();
-    let list = get_list(list_items);
-    let state = res.file_list_state_mut().get_mut();
+    let list_items = res
+        .files()
+        .iter()
+        .collect::<Vec<&FileName>>();
+    let list = get_list(&list_items);
 
-    frame.render_stateful_widget(list, lflex[0], state);
+    {
+        let mut state = res.file_list_state_mut();
+        let state = state.get_mut();
+        frame.render_stateful_widget(list, lflex[0], state);
+    }
 
     ui_entry_box(frame, lflex[1], res);
 }
 
 fn ui_entry_box(frame: &mut Frame, lflex: Rect, res: &mut Resource) {
-    if !res.entry_box().bool() {
+    if !res.entry_box().is_visible() {
         return;
     }
 

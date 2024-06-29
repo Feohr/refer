@@ -1,7 +1,5 @@
-use std::cmp::{Eq, Ordering, PartialEq, PartialOrd};
-use std::collections::{hash_map::Keys, HashMap};
+use std::cmp::PartialOrd;
 use std::ops::Add;
-use std::ops::Deref;
 
 use crossterm::event::*;
 use ratatui::widgets::*;
@@ -43,7 +41,7 @@ impl EntryBox {
         self.is_active = !self.is_active;
     }
 
-    pub fn bool(&self) -> bool {
+    pub fn is_visible(&self) -> bool {
         self.is_active
     }
 
@@ -75,77 +73,6 @@ impl EntryBox {
         let len = self.input_buff.len();
         let offset = len.saturating_sub(width);
         &self.input_buff[offset..len]
-    }
-}
-
-#[derive(Default)]
-pub struct FileBuff {
-    table: HashMap<FileName, String>,
-}
-
-#[derive(Default, Clone, Eq, Ord, Hash)]
-pub struct FileName {
-    value: String,
-    index: usize,
-}
-
-impl PartialEq for FileName {
-    fn eq(&self, other: &Self) -> bool {
-        self.value().eq(other.value())
-    }
-}
-
-impl PartialOrd for FileName {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.index.partial_cmp(&other.index)
-    }
-}
-
-impl FileName {
-    fn new(value: String, index: usize) -> Self {
-        FileName { value, index }
-    }
-
-    fn value(&self) -> &str {
-        &self.value
-    }
-
-    pub fn to_value(&self) -> String {
-        self.value.clone()
-    }
-}
-
-impl FileBuff {
-    pub fn with_files(files: Vec<String>) -> Self {
-        let mut table = HashMap::new();
-        for (index, file) in files.into_iter().enumerate() {
-            table.insert(FileName::new(file, index), String::new());
-        }
-        FileBuff { table }
-    }
-
-    pub fn names(&self) -> Keys<'_, FileName, String> {
-        self.table.keys()
-    }
-
-    pub fn get_buffer(&self, index: usize) -> &String {
-        self.table
-            .iter()
-            .find(|(f, _)| f.index.eq(&index))
-            .expect("Buffer not present for the file {name}")
-            .1
-    }
-
-    pub fn insert(&mut self, name: String) {
-        let len = self.table.len();
-        self.table.insert(FileName::new(name, len), String::new());
-    }
-}
-
-impl Deref for FileBuff {
-    type Target = HashMap<FileName, String>;
-    fn deref(&self) -> &Self::Target {
-        &self.table
     }
 }
 
@@ -204,7 +131,7 @@ pub fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
         if quit_listener(&event) {
             return Ok(true);
         }
-        match res.entry_box().bool() {
+        match res.entry_box().is_visible() {
             true => write_key_event(event, res),
             false => normal_key_event(event, res),
         }
@@ -335,8 +262,8 @@ fn write_key_event(event: Event, res: &mut Resource) {
             let name = res.entry_box_mut().take();
 
             if !name.is_empty() {
-                res.file_buff_mut().insert(name);
-                let len = res.file_buff().len();
+                res.files_mut().insert(name);
+                let len = res.files().len();
                 res.file_list_state_mut().set_size(len);
             }
 

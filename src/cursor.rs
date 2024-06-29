@@ -1,6 +1,6 @@
 use std::any::TypeId;
 
-pub struct Pointer {
+pub struct KeyboardCursor {
     toggle: Option<TypeId>,
     curr: TypeId,
 }
@@ -10,9 +10,9 @@ pub enum Mode {
     List,
 }
 
-impl Pointer {
+impl KeyboardCursor {
     pub fn new() -> Self {
-        Pointer {
+        KeyboardCursor {
             toggle: None,
             curr: TypeId::of::<View>(),
         }

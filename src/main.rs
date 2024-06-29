@@ -1,6 +1,7 @@
 pub mod cursor;
 pub mod input;
 pub mod resource;
+pub mod io;
 mod ui;
 
 use std::io::{stdout, Stdout};

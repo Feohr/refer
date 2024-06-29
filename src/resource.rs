@@ -1,29 +1,32 @@
+use std::cell::{RefCell, Ref, RefMut};
+
 use clap::Parser;
 
+use crate::io::*;
 use crate::cursor::*;
 use crate::input::*;
 
 pub struct Resource {
-    pub pointer: Pointer,
+    pub pointer: KeyboardCursor,
     pub entry_box: EntryBox,
-    pub file_list_state: FileListState,
-    pub file_buff: FileBuff,
+    pub file_list_state: RefCell<FileListState>,
+    pub files: FileList,
 }
 
 impl Resource {
     pub fn new() -> Self {
         let args = Refer::parse();
-        let file_buff = FileBuff::with_files(args.filename);
+        let files = FileList::with_files(args.filename);
 
         Resource {
-            pointer: Pointer::new(),
+            pointer: KeyboardCursor::new(),
             entry_box: EntryBox::new(),
-            file_list_state: FileListState::new(file_buff.len()),
-            file_buff,
+            file_list_state: RefCell::new(FileListState::new(files.len())),
+            files,
         }
     }
 
-    pub fn pointer(&self) -> &Pointer {
+    pub fn pointer(&self) -> &KeyboardCursor {
         &self.pointer
     }
 
@@ -31,15 +34,15 @@ impl Resource {
         &self.entry_box
     }
 
-    pub fn file_list_state(&self) -> &FileListState {
-        &self.file_list_state
+    pub fn file_list_state(&self) -> Ref<FileListState> {
+        self.file_list_state.borrow()
     }
 
-    pub fn file_buff(&self) -> &FileBuff {
-        &self.file_buff
+    pub fn files(&self) -> &FileList {
+        &self.files
     }
 
-    pub fn pointer_mut(&mut self) -> &mut Pointer {
+    pub fn pointer_mut(&mut self) -> &mut KeyboardCursor {
         &mut self.pointer
     }
 
@@ -47,12 +50,12 @@ impl Resource {
         &mut self.entry_box
     }
 
-    pub fn file_list_state_mut(&mut self) -> &mut FileListState {
-        &mut self.file_list_state
+    pub fn file_list_state_mut(&self) -> RefMut<FileListState> {
+        self.file_list_state.borrow_mut()
     }
 
-    pub fn file_buff_mut(&mut self) -> &mut FileBuff {
-        &mut self.file_buff
+    pub fn files_mut(&mut self) -> &mut FileList {
+        &mut self.files
     }
 }
 
