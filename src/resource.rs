@@ -64,3 +64,9 @@ impl Resource {
 struct Refer {
     filename: Vec<String>,
 }
+
+pub fn state_update(res: &mut Resource) {
+    res.files_mut()
+        .iter_mut()
+        .for_each(|(_, f)| f.update().expect("Error while reading the file"));
+}

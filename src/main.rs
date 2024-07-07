@@ -4,9 +4,12 @@ pub mod io;
 pub mod resource;
 mod ui;
 
-use std::io::{stdout, Stdout}; use std::ops::Drop; use std::rc::Rc; use std::sync::{Arc, Mutex};
 use crossterm::{event::*, execute, terminal::*};
 use ratatui::prelude::*;
+use std::io::{stdout, Stdout};
+use std::ops::Drop;
+use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use crate::input::*;
 use crate::resource::*;
@@ -36,6 +39,7 @@ impl App {
         let mut resource = Resource::new()?;
 
         loop {
+            state_update(&mut resource);
             if key_listener(&mut resource)? {
                 break;
             }

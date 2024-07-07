@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+ansi-to-tui = "4.0.1"
 anyhow = "1.0.86"
 clap = { version = "4.5.7", features = ["derive"] }
 crossterm = "0.27.0"
-dyn-clone = "1.0.17"
-itertools = "0.13.0"
 ratatui = { version = "0.26.3", features = ["macros"] }
-uuid = { version = "1.8.0", features = ["v8"] }
+snailquote = "0.3.1"
+
+[profile.release]
+debug=true # only for flamegraph

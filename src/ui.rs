@@ -40,21 +40,13 @@ const FADE: Style = Style {
     sub_modifier: Modifier::empty(),
 };
 
-fn headers<'a>() -> Line<'a> {
-    Line::from(vec![
-        Span::from("(ctrl) + (q) quit"),
-        Span::from("  │  "),
-        Span::from("(ctrl) + (n) new file"),
-        Span::from("  │  "),
-        Span::from("(ctrl) + (d) delete file"),
-        Span::from("  │  "),
-        Span::from("(ctrl) + (j or ↑) up"),
-        Span::from("  │  "),
-        Span::from("(ctrl) + (k or ↓) down"),
-        Span::from("  │  "),
-        Span::from("(ctrl) + (t) toggle tailing"),
-    ])
-}
+const HEADERS: &'static str = "\
+    (ctrl) + (q) quit  │  \
+    (ctrl) + (n) new file  │  \
+    (ctrl) + (d) delete file  │  \
+    (ctrl) + (j or ↑) up  │  \
+    (ctrl) + (k or ↓) down  │  \
+    (ctrl) + (t) toggle tailing";
 
 pub fn ui(frame: &mut Frame, res: &mut Resource) {
     let size = frame.size();
@@ -79,7 +71,7 @@ fn ui_main(frame: &mut Frame, vflex: RectVec, res: &mut Resource) {
 
 fn ui_header(frame: &mut Frame, fflex: Rect) {
     frame.render_widget(
-        Paragraph::new(headers())
+        Paragraph::new(Line::from(Span::from(HEADERS)))
             .centered()
             .block(
                 Block::default()
@@ -92,8 +84,17 @@ fn ui_header(frame: &mut Frame, fflex: Rect) {
     );
 }
 
+#[inline]
 fn get_cursor_shade_from_condition(cond: bool) -> Style {
     [FADE, BLOCK][cond as usize]
+}
+
+fn get_lines_from_buffer<'a>(res: &'a Resource, hflex: Rect) -> Vec<&'a str> {
+    let curr_index = res.file_list_state().index();
+    let Some(curr_buff) = res.files().get_file_buff(curr_index) else {
+        return Default::default(); // Return default
+    };
+    curr_buff.buffer(hflex)
 }
 
 fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
@@ -102,22 +103,31 @@ fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
     frame.render_widget(
         Block::default()
             .borders(border!(ALL))
+            .title(" Files ")
+            .title_alignment(Alignment::Center)
             .border_style(get_cursor_shade_from_condition(cursor.cursor_at::<Files>()))
             .border_type(BORDER)
             .style(Style::default().bg(RBG).fg(RFG)),
         hflex[0],
     );
 
+    let lines = get_lines_from_buffer(res, hflex[1]);
+
     frame.render_widget(
-        Paragraph::new(vec![])
-            .block(
-                Block::default()
-                    .borders(border!(ALL))
-                    .border_style(get_cursor_shade_from_condition(cursor.cursor_at::<View>()))
-                    .border_type(BORDER)
-                    .style(Style::default().bg(RBG).fg(RFG)),
-            )
-            .wrap(Wrap { trim: false }),
+        Paragraph::new(
+            lines
+                .into_iter()
+                .map(|l| Line::raw(l))
+                .collect::<Vec<Line>>(),
+        )
+        .block(
+            Block::default()
+                .borders(border!(ALL))
+                .border_style(get_cursor_shade_from_condition(cursor.cursor_at::<View>()))
+                .border_type(BORDER)
+                .style(Style::default().bg(RBG).fg(RFG)),
+        )
+        .wrap(Wrap { trim: false }),
         hflex[1],
     );
 
@@ -168,7 +178,9 @@ fn ui_entry_box(frame: &mut Frame, lflex: Rect, res: &mut Resource) {
         .block(
             Block::default()
                 .borders(border!(ALL))
-                .border_style(if is_err { ERR } else { BLOCK })
+                .border_style([BLOCK, ERR][is_err as usize])
+                .title(" Filename ")
+                .title_alignment(Alignment::Left)
                 .border_type(BORDER),
         )
         .wrap(Wrap { trim: true })

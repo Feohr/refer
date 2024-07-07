@@ -1,6 +1,8 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
+
+use ratatui::layout::*;
 
 /// A list to maintain names of the file. The actual file content will be saved into another object
 /// this type only to provide an ordered list of file names.
@@ -13,6 +15,12 @@ impl Deref for FileList {
     type Target = Vec<(FileName, FileBuf)>;
     fn deref(&self) -> &Self::Target {
         &self.table
+    }
+}
+
+impl DerefMut for FileList {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.table
     }
 }
 
@@ -54,12 +62,17 @@ impl FileList {
     pub fn names(&self) -> Vec<&FileName> {
         self.iter().map(|(f, _)| f).collect()
     }
+
+    pub fn get_file_buff(&self, index: usize) -> Option<&FileBuf> {
+        self.get(index).map(|(_, f)| f)
+    }
 }
 
 pub struct FileBuf {
     is_tail: bool,
     path: Box<str>,
     reader: Option<BufReader<File>>,
+    count: usize,
     buffer: String,
 }
 
@@ -69,11 +82,13 @@ impl FileBuf {
         let file = File::open(path.as_ref())?;
         let reader = Some(BufReader::new(file));
         let buffer = String::new();
+        let count = 1;
 
         Ok(FileBuf {
             is_tail,
             path,
             reader,
+            count,
             buffer,
         })
     }
@@ -85,17 +100,35 @@ impl FileBuf {
         }
 
         if let Some(reader) = self.reader.as_mut() {
-            let mut tick = 10; // ticks
-            while tick > 0 {
-                reader.read_line(&mut self.buffer)?;
-                tick -= 1;
+            let mut lines_to_read = 48; // Read 48 lines at a time.
+            let mut buffer = String::new();
+
+            while lines_to_read > 0 {
+                if reader.read_line(&mut buffer)? == 0 && !self.is_tail {
+                    self.reader = None;
+                    break;
+                }
+
+                self.buffer.push_str(&format!(
+                    "{:>6}|  {}",
+                    self.count,
+                    buffer.replace('\t', "\\t")
+                ));
+
+                self.count += 1;
+                lines_to_read -= 1;
+                buffer.clear();
             }
         }
 
         Ok(())
     }
 
-    pub fn buffer(&self) -> &str {
-        self.buffer.as_str()
+    // Only return lines that are visible in the screen.
+    pub fn buffer<'a>(&'a self, rect: Rect) -> Vec<&'a str> {
+        let size = rect.height.saturating_sub(rect.y) as usize;
+        let lines = self.buffer.lines().collect::<Vec<&'a str>>();
+        let min = lines.len().min(size);
+        lines[0..min].to_vec()
     }
 }
