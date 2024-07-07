@@ -44,6 +44,7 @@ impl EntryBox {
         self.input_buff.pop();
     }
 
+    #[inline]
     pub fn len(&self) -> usize {
         self.input_buff.len()
     }
@@ -52,10 +53,12 @@ impl EntryBox {
         self.input_buff.clear();
     }
 
+    #[inline]
     pub fn take(&mut self) -> String {
         std::mem::take(&mut self.input_buff)
     }
 
+    #[inline]
     pub fn get(&self) -> &str {
         &self.input_buff
     }
@@ -68,10 +71,12 @@ impl EntryBox {
         self.is_err = false;
     }
 
+    #[inline]
     pub fn is_err(&self) -> bool {
         self.is_err
     }
 
+    #[inline]
     pub fn input_buff(&self) -> Box<str> {
         self.input_buff.clone().into_boxed_str()
     }
@@ -123,6 +128,7 @@ impl FileListState {
         self.state.select(Some(self.index));
     }
 
+    #[inline]
     pub fn index(&self) -> usize {
         self.index
     }

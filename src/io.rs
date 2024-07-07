@@ -30,10 +30,12 @@ pub struct FileName {
 }
 
 impl FileName {
+    #[inline]
     fn new(value: Box<str>) -> Self {
         FileName { value }
     }
 
+    #[inline]
     pub fn value(&self) -> &str {
         &self.value
     }
@@ -59,10 +61,12 @@ impl FileList {
         Ok(())
     }
 
+    #[inline]
     pub fn names(&self) -> Vec<&FileName> {
         self.iter().map(|(f, _)| f).collect()
     }
 
+    #[inline]
     pub fn get_file_buff(&self, index: usize) -> Option<&FileBuf> {
         self.get(index).map(|(_, f)| f)
     }
@@ -73,7 +77,7 @@ pub struct FileBuf {
     path: Box<str>,
     reader: Option<BufReader<File>>,
     count: usize,
-    buffer: String,
+    buffer: Vec<String>,
 }
 
 impl FileBuf {
@@ -81,7 +85,7 @@ impl FileBuf {
         let path = path.to_string().into_boxed_str();
         let file = File::open(path.as_ref())?;
         let reader = Some(BufReader::new(file));
-        let buffer = String::new();
+        let buffer = Vec::new();
         let count = 1;
 
         Ok(FileBuf {
@@ -109,10 +113,10 @@ impl FileBuf {
                     break;
                 }
 
-                self.buffer.push_str(&format!(
+                self.buffer.push(format!(
                     "{:>6}|  {}",
                     self.count,
-                    buffer.replace('\t', "\\t")
+                    buffer.replace('\t', &"\u{000A0}".repeat(4))
                 ));
 
                 self.count += 1;
@@ -127,8 +131,20 @@ impl FileBuf {
     // Only return lines that are visible in the screen.
     pub fn buffer<'a>(&'a self, rect: Rect) -> Vec<&'a str> {
         let size = rect.height.saturating_sub(rect.y) as usize;
-        let lines = self.buffer.lines().collect::<Vec<&'a str>>();
+        let lines = self
+            .buffer
+            .iter()
+            .map(|s| s.as_str())
+            .collect::<Vec<&'a str>>();
         let min = lines.len().min(size);
         lines[0..min].to_vec()
+    }
+
+    // Replace the buffer with the error message and close the file reader.
+    pub fn nullify(&mut self) {
+        self.buffer =
+            vec!["Cannot read file since it contains invalid UTF-8 characters".to_string()];
+        self.reader = None;
+        self.is_tail = false;
     }
 }

@@ -86,7 +86,11 @@ fn ui_header(frame: &mut Frame, fflex: Rect) {
 
 #[inline]
 fn get_cursor_shade_from_condition(cond: bool) -> Style {
-    [FADE, BLOCK][cond as usize]
+    if cond {
+        BLOCK
+    } else {
+        FADE
+    }
 }
 
 fn get_lines_from_buffer<'a>(res: &'a Resource, hflex: Rect) -> Vec<&'a str> {

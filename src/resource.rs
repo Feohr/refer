@@ -26,34 +26,42 @@ impl Resource {
         })
     }
 
+    #[inline]
     pub fn pointer(&self) -> &KeyboardCursor {
         &self.pointer
     }
 
+    #[inline]
     pub fn entry_box(&self) -> &EntryBox {
         &self.entry_box
     }
 
+    #[inline]
     pub fn file_list_state(&self) -> Ref<FileListState> {
         self.file_list_state.borrow()
     }
 
+    #[inline]
     pub fn files(&self) -> &FileList {
         &self.files
     }
 
+    #[inline]
     pub fn pointer_mut(&mut self) -> &mut KeyboardCursor {
         &mut self.pointer
     }
 
+    #[inline]
     pub fn entry_box_mut(&mut self) -> &mut EntryBox {
         &mut self.entry_box
     }
 
+    #[inline]
     pub fn file_list_state_mut(&self) -> RefMut<FileListState> {
         self.file_list_state.borrow_mut()
     }
 
+    #[inline]
     pub fn files_mut(&mut self) -> &mut FileList {
         &mut self.files
     }
@@ -66,7 +74,9 @@ struct Refer {
 }
 
 pub fn state_update(res: &mut Resource) {
-    res.files_mut()
-        .iter_mut()
-        .for_each(|(_, f)| f.update().expect("Error while reading the file"));
+    res.files_mut().iter_mut().for_each(|(_, f)| {
+        if f.update().is_err() {
+            f.nullify();
+        }
+    });
 }
