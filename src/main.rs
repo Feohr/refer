@@ -1,14 +1,10 @@
 pub mod cursor;
 pub mod input;
-pub mod resource;
 pub mod io;
+pub mod resource;
 mod ui;
 
-use std::io::{stdout, Stdout};
-use std::ops::Drop;
-use std::rc::Rc;
-use std::sync::{Arc, Mutex};
-
+use std::io::{stdout, Stdout}; use std::ops::Drop; use std::rc::Rc; use std::sync::{Arc, Mutex};
 use crossterm::{event::*, execute, terminal::*};
 use ratatui::prelude::*;
 
@@ -37,7 +33,7 @@ impl App {
             EnableMouseCapture
         )?;
 
-        let mut resource = Resource::new();
+        let mut resource = Resource::new()?;
 
         loop {
             if key_listener(&mut resource)? {

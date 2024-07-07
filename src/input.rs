@@ -1,6 +1,3 @@
-use std::cmp::PartialOrd;
-use std::ops::Add;
-
 use crossterm::event::*;
 use ratatui::widgets::*;
 
@@ -9,15 +6,16 @@ use crate::resource::*;
 
 pub const DELTA: u64 = 16;
 
-fn max_add<T: Add<Output=T> + PartialOrd>(value: T, other: T, max: T) -> T {
-    if value < max {
-        return value.add(other);
+fn bounded_add(value: usize, other: usize, bound: usize) -> usize {
+    if value < bound {
+        return value.saturating_add(other);
     }
     value
 }
 
 pub struct EntryBox {
     is_active: bool,
+    is_err: bool,
     input_buff: String,
 }
 
@@ -25,6 +23,7 @@ impl EntryBox {
     pub fn new() -> Self {
         EntryBox {
             is_active: false,
+            is_err: false,
             input_buff: String::new(),
         }
     }
@@ -61,6 +60,22 @@ impl EntryBox {
         &self.input_buff
     }
 
+    pub fn set_err(&mut self) {
+        self.is_err = true;
+    }
+
+    pub fn set_ok(&mut self) {
+        self.is_err = false;
+    }
+
+    pub fn is_err(&self) -> bool {
+        self.is_err
+    }
+
+    pub fn input_buff(&self) -> Box<str> {
+        self.input_buff.clone().into_boxed_str()
+    }
+
     pub fn get_span(&self, width: usize) -> &str {
         let len = self.input_buff.len();
         let offset = len.saturating_sub(width);
@@ -89,7 +104,7 @@ impl FileListState {
     }
 
     pub fn next(&mut self) {
-        self.index = max_add(self.index, 1, self.size.saturating_sub(1));
+        self.index = bounded_add(self.index, 1, self.size.saturating_sub(1));
         self.state.select(Some(self.index));
     }
 
@@ -124,7 +139,7 @@ pub fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
             return Ok(true);
         }
         match res.entry_box().is_visible() {
-            true => write_key_event(event, res),
+            true => write_key_event(event, res)?,
             false => normal_key_event(event, res),
         }
     }
@@ -230,7 +245,7 @@ fn normal_key_event(event: Event, res: &mut Resource) {
     }
 }
 
-fn write_key_event(event: Event, res: &mut Resource) {
+fn write_key_event(event: Event, res: &mut Resource) -> anyhow::Result<()> {
     match event {
         Event::Key(KeyEvent {
             code: KeyCode::Char('n'),
@@ -241,8 +256,7 @@ fn write_key_event(event: Event, res: &mut Resource) {
             code: KeyCode::Esc,
             modifiers: KeyModifiers::NONE,
             ..
-        })
-        => {
+        }) => {
             res.pointer_mut().toggle();
             res.entry_box_mut().clear();
             res.entry_box_mut().toggle();
@@ -251,12 +265,19 @@ fn write_key_event(event: Event, res: &mut Resource) {
             code: KeyCode::Enter,
             ..
         }) => {
-            let name = res.entry_box_mut().take();
+            let name = res.entry_box().input_buff();
+            if res.files_mut().insert(name.clone()).is_err() {
+                res.entry_box_mut().set_err();
+                return Ok(());
+            }
+
+            // Clean the entry box
+            res.entry_box_mut().clear();
 
             if !name.is_empty() {
-                res.files_mut().insert(name);
                 let len = res.files().len();
                 res.file_list_state_mut().set_size(len);
+                res.entry_box_mut().set_ok();
             }
 
             res.pointer_mut().toggle();
@@ -265,11 +286,16 @@ fn write_key_event(event: Event, res: &mut Resource) {
         Event::Key(KeyEvent {
             code: KeyCode::Backspace,
             ..
-        }) => res.entry_box_mut().pop(),
+        }) => {
+            res.entry_box_mut().set_ok();
+            res.entry_box_mut().pop();
+        }
         Event::Key(KeyEvent {
             code: KeyCode::Char(c),
             ..
         }) => res.entry_box_mut().push(c),
         _ => {}
     }
+
+    Ok(())
 }

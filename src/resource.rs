@@ -1,10 +1,10 @@
-use std::cell::{RefCell, Ref, RefMut};
+use std::cell::{Ref, RefCell, RefMut};
 
 use clap::Parser;
 
-use crate::io::*;
 use crate::cursor::*;
 use crate::input::*;
+use crate::io::*;
 
 pub struct Resource {
     pub pointer: KeyboardCursor,
@@ -14,16 +14,16 @@ pub struct Resource {
 }
 
 impl Resource {
-    pub fn new() -> Self {
+    pub fn new() -> anyhow::Result<Self> {
         let args = Refer::parse();
-        let files = FileList::with_files(args.filename);
+        let files = FileList::with_files(args.filename)?;
 
-        Resource {
+        Ok(Resource {
             pointer: KeyboardCursor::new(),
             entry_box: EntryBox::new(),
             file_list_state: RefCell::new(FileListState::new(files.len())),
             files,
-        }
+        })
     }
 
     pub fn pointer(&self) -> &KeyboardCursor {
