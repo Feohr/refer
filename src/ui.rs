@@ -10,6 +10,7 @@ const RFG: Color = Color::Gray;
 const RBG: Color = Color::Rgb(20, 20, 20);
 const DFG: Color = Color::Rgb(80, 80, 80);
 const EFG: Color = Color::LightRed;
+const LOG: Color = Color::DarkGray;
 
 const BLOCK: Style = Style {
     fg: Some(RFG),
@@ -20,6 +21,13 @@ const BLOCK: Style = Style {
 };
 const ERR: Style = Style {
     fg: Some(EFG),
+    bg: Some(RBG),
+    underline_color: None,
+    add_modifier: Modifier::empty(),
+    sub_modifier: Modifier::empty(),
+};
+const LOG_MSG: Style = Style {
+    fg: Some(LOG),
     bg: Some(RBG),
     underline_color: None,
     add_modifier: Modifier::empty(),
@@ -93,12 +101,16 @@ fn get_cursor_shade_from_condition(cond: bool) -> Style {
     }
 }
 
-fn get_lines_from_buffer<'a>(res: &'a Resource, hflex: Rect) -> Vec<&'a str> {
+fn get_lines_from_buffer<'a>(res: &'a Resource, hflex: Rect) -> Vec<Line<'a>> {
     let curr_index = res.file_list_state().index();
     let Some(curr_buff) = res.files().get_file_buff(curr_index) else {
         return Default::default(); // Return default
     };
-    curr_buff.buffer(hflex)
+    let (buffer, nulled) = curr_buff.buffer(hflex);
+    buffer
+        .into_iter()
+        .map(|l| Line::styled(l, if nulled { LOG_MSG } else { BLOCK }))
+        .collect::<Vec<Line>>()
 }
 
 fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
@@ -115,23 +127,16 @@ fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
         hflex[0],
     );
 
-    let lines = get_lines_from_buffer(res, hflex[1]);
-
     frame.render_widget(
-        Paragraph::new(
-            lines
-                .into_iter()
-                .map(|l| Line::raw(l))
-                .collect::<Vec<Line>>(),
-        )
-        .block(
-            Block::default()
-                .borders(border!(ALL))
-                .border_style(get_cursor_shade_from_condition(cursor.cursor_at::<View>()))
-                .border_type(BORDER)
-                .style(Style::default().bg(RBG).fg(RFG)),
-        )
-        .wrap(Wrap { trim: false }),
+        Paragraph::new(get_lines_from_buffer(res, hflex[1]))
+            .block(
+                Block::default()
+                    .borders(border!(ALL))
+                    .border_style(get_cursor_shade_from_condition(cursor.cursor_at::<View>()))
+                    .border_type(BORDER)
+                    .style(Style::default().bg(RBG).fg(RFG)),
+            )
+            .wrap(Wrap { trim: false }),
         hflex[1],
     );
 

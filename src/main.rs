@@ -114,3 +114,10 @@ fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+pub fn bounded_add(value: usize, other: usize, bound: usize) -> usize {
+    if value < bound {
+        return value.saturating_add(other);
+    }
+    value
+}

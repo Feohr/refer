@@ -75,8 +75,8 @@ struct Refer {
 
 pub fn state_update(res: &mut Resource) {
     res.files_mut().iter_mut().for_each(|(_, f)| {
-        if f.update().is_err() {
-            f.nullify();
+        if let Err(err) = f.update() {
+            f.nullify(format!("{err}"));
         }
     });
 }

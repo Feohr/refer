@@ -3,15 +3,9 @@ use ratatui::widgets::*;
 
 use crate::cursor::*;
 use crate::resource::*;
+use crate::*;
 
 pub const DELTA: u64 = 16;
-
-fn bounded_add(value: usize, other: usize, bound: usize) -> usize {
-    if value < bound {
-        return value.saturating_add(other);
-    }
-    value
-}
 
 pub struct EntryBox {
     is_active: bool,
@@ -204,6 +198,14 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             if res.pointer().cursor_at::<Files>() {
                 res.file_list_state_mut().next();
             }
+            if res.pointer().cursor_at::<View>() {
+                let curr_index = res.file_list_state().index();
+                let curr_buff = res
+                    .files_mut()
+                    .get_file_buff_mut(curr_index)
+                    .expect("list index points to invalid buff");
+                curr_buff.next();
+            }
         }
         Event::Key(KeyEvent {
             code: KeyCode::Up,
@@ -217,6 +219,14 @@ fn normal_key_event(event: Event, res: &mut Resource) {
         }) => {
             if res.pointer().cursor_at::<Files>() {
                 res.file_list_state_mut().prev();
+            }
+            if res.pointer().cursor_at::<View>() {
+                let curr_index = res.file_list_state().index();
+                let curr_buff = res
+                    .files_mut()
+                    .get_file_buff_mut(curr_index)
+                    .expect("list index points to invalid buff");
+                curr_buff.prev();
             }
         }
         Event::Key(KeyEvent {
