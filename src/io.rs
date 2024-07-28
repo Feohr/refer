@@ -141,27 +141,32 @@ impl FileBuf {
         Ok(())
     }
 
-    // Only return lines that are visible in the screen.
+    // Only return lines that are visible on the screen.
     pub fn buffer<'a>(&'a self, rect: Rect) -> (Vec<&'a str>, bool) {
         let size = rect.height.saturating_sub(rect.y) as usize;
         let lines = self
             .buffer
             .iter()
-            .map(|s| s.as_str())
+            .map(String::as_str)
             .collect::<Vec<&'a str>>();
 
         let len = lines.len();
         let bottom = self.index + size;
-        let min = bottom.min(len);
 
-        (lines[self.index..min].to_vec(), self.nulled)
+        let slice = if bottom > len {
+            &lines[len.saturating_sub(size)..len]
+        } else {
+            &lines[self.index..bottom]
+        };
+
+        (slice.to_vec(), self.nulled)
     }
 
     // Replace the buffer with the error message and close the file reader.
     pub fn nullify(&mut self, message: String) {
         self.nulled = true;
         self.buffer = vec![message];
-        self.reader = None;
+        let _ = self.reader.take();
         self.index = 0;
         self.is_tail = false;
     }
