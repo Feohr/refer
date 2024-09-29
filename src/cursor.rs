@@ -1,5 +1,10 @@
 use std::any::TypeId;
 
+/// The cursor is on file list.
+pub struct Files;
+/// the cursor is on text view.
+pub struct View;
+
 /// To denote where the current cursor is located.
 pub struct KeyboardCursor {
     toggle: Option<TypeId>,
@@ -7,11 +12,9 @@ pub struct KeyboardCursor {
 }
 
 impl KeyboardCursor {
+    #[inline]
     pub fn new() -> Self {
-        KeyboardCursor {
-            toggle: None,
-            curr: TypeId::of::<View>(),
-        }
+        KeyboardCursor::default()
     }
 
     pub fn set_cursor<W: 'static>(&mut self) {
@@ -37,7 +40,11 @@ impl KeyboardCursor {
     }
 }
 
-/// The cursor is on file list.
-pub struct Files;
-/// the cursor is on text view.
-pub struct View;
+impl Default for KeyboardCursor {
+    fn default() -> Self {
+        KeyboardCursor {
+            toggle: None,
+            curr: TypeId::of::<View>(),
+        }
+    }
+}

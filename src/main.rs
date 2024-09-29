@@ -6,14 +6,19 @@ mod ui;
 
 use crossterm::{event::*, execute, terminal::*};
 use ratatui::prelude::*;
-use std::io::{stdout, Stdout};
-use std::ops::Drop;
-use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::{
+    io::{stdout, Stdout},
+    ops::Drop,
+    rc::Rc,
+    sync::{Arc, Mutex},
+    fs::File,
+};
+use simplelog::WriteLogger;
 
 use crate::input::*;
 use crate::resource::*;
 
+const LOGFILE_NAME: &str = "refer.log";
 pub type RectVec = Rc<[Rect]>;
 
 pub struct App {
@@ -37,13 +42,15 @@ impl App {
         )?;
 
         let mut resource = Resource::new()?;
+        create_logger()?;
 
         loop {
+            if key_listener(&mut resource)? { break }
             state_update(&mut resource);
-            if key_listener(&mut resource)? {
-                break;
-            }
+
+            trigger_view_update(&mut resource);
             self.terminal.draw(|f| ui::ui(f, &mut resource))?;
+            detrigger_view_update(&mut resource);
         }
 
         Ok(())
@@ -102,9 +109,9 @@ fn main() -> anyhow::Result<()> {
 
     match res {
         Ok(res) => res,
-        Err(_) => {
+        Err(err) => {
             return Err(anyhow::anyhow!(
-                "{}",
+                "{err:?}:{}",
                 panic_buff
                     .lock()
                     .expect("Couldn't get lock on error buffer")
@@ -120,4 +127,11 @@ pub fn bounded_add(value: usize, other: usize, bound: usize) -> usize {
         return value.saturating_add(other);
     }
     value
+}
+
+fn create_logger() -> anyhow::Result<()> {
+    let file = File::create(LOGFILE_NAME)
+        .map_err(|err| anyhow::anyhow!("Couldn't create the log file due to: {err}"))?;
+    WriteLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default(), file)?;
+    Ok(())
 }

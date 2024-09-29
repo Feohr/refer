@@ -48,7 +48,7 @@ const FADE: Style = Style {
     sub_modifier: Modifier::empty(),
 };
 
-const HEADERS: &'static str = "\
+const HEADERS: &str = "\
     (ctrl) + (q) quit  │  \
     (ctrl) + (n) new file  │  \
     (ctrl) + (d) delete file  │  \
@@ -147,7 +147,7 @@ fn get_list<'a>(items: &'a [&'a FileName]) -> List<'a> {
     List::new(get_list_items(items))
         .block(Block::default().border_style(INVISIBLE))
         .highlight_symbol(" ► ")
-        .highlight_style(Style::default().fg(RBG).bg(DFG))
+        .highlight_style(Style::default().fg(RBG).bg(RFG))
 }
 
 fn get_list_items<'a>(items: &'a [&'a FileName]) -> Vec<ListItem<'a>> {

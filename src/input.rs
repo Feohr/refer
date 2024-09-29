@@ -7,6 +7,7 @@ use crate::*;
 
 pub const DELTA: u64 = 16;
 
+#[derive(Default)]
 pub struct EntryBox {
     is_active: bool,
     is_err: bool,
@@ -14,18 +15,16 @@ pub struct EntryBox {
 }
 
 impl EntryBox {
+    #[inline]
     pub fn new() -> Self {
-        EntryBox {
-            is_active: false,
-            is_err: false,
-            input_buff: String::new(),
-        }
+        EntryBox::default()
     }
 
     pub fn toggle(&mut self) {
         self.is_active = !self.is_active;
     }
 
+    #[inline]
     pub fn is_visible(&self) -> bool {
         self.is_active
     }
@@ -41,6 +40,11 @@ impl EntryBox {
     #[inline]
     pub fn len(&self) -> usize {
         self.input_buff.len()
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.input_buff.len() == 0
     }
 
     pub fn clear(&mut self) {
@@ -135,9 +139,7 @@ impl FileListState {
 pub fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
     if poll(std::time::Duration::from_millis(DELTA))? {
         let event = read()?;
-        if quit_listener(&event) {
-            return Ok(true);
-        }
+        if quit_listener(&event) { return Ok(true) }
         match res.entry_box().is_visible() {
             true => write_key_event(event, res)?,
             false => normal_key_event(event, res),
@@ -147,15 +149,26 @@ pub fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
     Ok(false)
 }
 
+pub fn trigger_view_update(res: &mut Resource) {
+    res
+        .files_mut()
+        .iter_mut()
+        .for_each(|(_, f)| f.trigger_view_update());
+}
+
+pub fn detrigger_view_update(res: &mut Resource) {
+    res
+        .files_mut()
+        .iter_mut()
+        .for_each(|(_, f)| f.detrigger_view_update());
+}
+
 fn quit_listener(event: &Event) -> bool {
-    match event {
-        Event::Key(KeyEvent {
+    if let Event::Key(KeyEvent {
             code: KeyCode::Char('q'),
             modifiers: KeyModifiers::CONTROL,
             ..
-        }) => return true,
-        _ => {}
-    }
+        }) = event { return true }
     false
 }
 
@@ -200,11 +213,11 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             }
             if res.pointer().cursor_at::<View>() {
                 let curr_index = res.file_list_state().index();
-                let curr_buff = res
+                if let Some(curr_buff) = res
                     .files_mut()
-                    .get_file_buff_mut(curr_index)
-                    .expect("list index points to invalid buff");
-                curr_buff.next();
+                    .get_file_buff_mut(curr_index) {
+                        curr_buff.next();
+                    }
             }
         }
         Event::Key(KeyEvent {
@@ -222,11 +235,11 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             }
             if res.pointer().cursor_at::<View>() {
                 let curr_index = res.file_list_state().index();
-                let curr_buff = res
+                if let Some(curr_buff) = res
                     .files_mut()
-                    .get_file_buff_mut(curr_index)
-                    .expect("list index points to invalid buff");
-                curr_buff.prev();
+                    .get_file_buff_mut(curr_index) {
+                        curr_buff.prev();
+                    }
             }
         }
         Event::Key(KeyEvent {

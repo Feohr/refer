@@ -1,13 +1,12 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::ops::{Deref, DerefMut};
+use std::cell::RefCell;
 
 use ratatui::layout::*;
 
-use crate::*;
-
-/// A list to maintain names of the file. The actual file content will be saved into another object
-/// this type only to provide an ordered list of file names.
+/// A list to maintain names of the file. The actual file content will be saved
+/// into another object this type only to provide an ordered list of file names.
 #[derive(Default)]
 pub struct FileList {
     pub table: Vec<(FileName, FileBuf)>,
@@ -84,8 +83,9 @@ pub struct FileBuf {
     is_tail: bool,
     path: Box<str>,
     reader: Option<BufReader<File>>,
-    index: usize,
-    count: usize,
+    view: RefCell<[usize; 2]>,
+    view_update: bool,
+    lines: usize,
     buffer: Vec<String>,
 }
 
@@ -96,16 +96,18 @@ impl FileBuf {
         let file = File::open(path.as_ref())?;
         let reader = Some(BufReader::new(file));
         let buffer = Vec::new();
-        let count = 1;
-        let index = 0;
+        let view = RefCell::new(Default::default());
+        let view_update = true;
+        let lines = 1;
 
         Ok(FileBuf {
             nulled,
             is_tail,
             path,
             reader,
-            count,
-            index,
+            view,
+            lines,
+            view_update,
             buffer,
         })
     }
@@ -116,47 +118,68 @@ impl FileBuf {
             self.reader = Some(BufReader::new(file));
         }
 
-        if let Some(reader) = self.reader.as_mut() {
-            let mut lines_to_read = 48; // Read 48 lines at a time.
-            let mut buffer = String::new();
+        let Some(reader) = self.reader.as_mut() else {
+            return Ok(());
+        };
 
-            while lines_to_read > 0 {
-                if reader.read_line(&mut buffer)? == 0 && !self.is_tail {
-                    self.reader = None;
-                    break;
-                }
+        let mut lines_to_read = self.view.borrow()[1];
+        let mut buffer = String::new();
 
-                self.buffer.push(format!(
-                    "{:>6}|  {}",
-                    self.count,
-                    buffer.replace('\t', &"\u{000A0}".repeat(4)).replace('\r', "")
-                ));
-
-                self.count += 1;
-                lines_to_read -= 1;
-                buffer.clear();
+        while lines_to_read > 0 {
+            if reader.read_line(&mut buffer)? == 0 && !self.is_tail {
+                self.reader = None;
+                break;
             }
+
+            self.buffer.push(format!(
+                "{:>6}|  {}",
+                self.lines,
+                buffer
+                    .replace('\t', &"\u{000A0}".repeat(4))
+                    .replace('\r', "")
+            ));
+
+            self.lines += 1;
+            lines_to_read -= 1;
+            buffer.clear();
         }
 
         Ok(())
     }
 
+    pub fn detrigger_view_update(&mut self) {
+        if self.view_update {
+            log::debug!("Detriggering view update for: {}", self.path);
+            self.view_update = false;
+        }
+    }
+
+    pub fn trigger_view_update(&mut self) {
+        if self.view_update { return }
+        log::debug!("Triggering view update for: {}", self.path);
+        self.view_update = true;
+    }
+
     // Only return lines that are visible on the screen.
     pub fn buffer<'a>(&'a self, rect: Rect) -> (Vec<&'a str>, bool) {
-        let size = rect.height.saturating_sub(rect.y) as usize;
+        if self.view_update {
+            let mut view = self.view.borrow_mut();
+            view[1] = view[0].saturating_add(rect.as_size().height.into()).saturating_sub(2);
+        }
+
+        let len = self.buffer.len();
+        let (start, end) = (self.view.borrow()[0], self.view.borrow()[1]);
+        log::debug!("In path: {}, start: {} and end: {}", self.path, start, end);
         let lines = self
             .buffer
             .iter()
             .map(String::as_str)
             .collect::<Vec<&'a str>>();
 
-        let len = lines.len();
-        let bottom = self.index + size;
-
-        let slice = if bottom > len {
-            &lines[len.saturating_sub(size)..len]
+        let slice = if len >= end && start < end {
+            &lines[start..end]
         } else {
-            &lines[self.index..bottom]
+            &lines[..]
         };
 
         (slice.to_vec(), self.nulled)
@@ -167,21 +190,27 @@ impl FileBuf {
         self.nulled = true;
         self.buffer = vec![message];
         let _ = self.reader.take();
-        self.index = 0;
+        self.view = RefCell::new([0, 1]);
         self.is_tail = false;
     }
 
     pub fn next(&mut self) {
-        if self.nulled {
-            return;
+        let len = self.buffer.len();
+        let (start, end) = (self.view.borrow()[0], self.view.borrow()[1]);
+        if end < len {
+            log::debug!("inside next. start: {}, end: {}", start, end);
+            let mut view = self.view.borrow_mut();
+            view[0] = start.saturating_add(1);
+            view[1] = end.saturating_add(1);
         }
-        self.index = bounded_add(self.index, 1, self.count.saturating_sub(2));
     }
 
     pub fn prev(&mut self) {
-        if self.nulled {
-            return;
+        let (start, end) = (self.view.borrow()[0], self.view.borrow()[1]);
+        if start > 0 {
+            let mut view = self.view.borrow_mut();
+            view[0] = start.saturating_sub(1);
+            view[1] = end.saturating_sub(1);
         }
-        self.index = self.index.saturating_sub(1);
     }
 }
