@@ -1,19 +1,21 @@
+use std::cell::RefCell;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::ops::{Deref, DerefMut};
-use std::cell::RefCell;
+use std::path::Path;
 
+use anyhow::anyhow;
 use ratatui::layout::*;
 
 /// A list to maintain names of the file. The actual file content will be saved
 /// into another object this type only to provide an ordered list of file names.
 #[derive(Default)]
 pub struct FileList {
-    pub table: Vec<(FileName, FileBuf)>,
+    pub table: Vec<FileBuf>,
 }
 
 impl Deref for FileList {
-    type Target = Vec<(FileName, FileBuf)>;
+    type Target = Vec<FileBuf>;
     fn deref(&self) -> &Self::Target {
         &self.table
     }
@@ -25,63 +27,49 @@ impl DerefMut for FileList {
     }
 }
 
-#[derive(Default, Hash)]
-pub struct FileName {
-    value: Box<str>,
-}
-
-impl FileName {
-    #[inline]
-    fn new(value: Box<str>) -> Self {
-        FileName { value }
-    }
-
-    #[inline]
-    pub fn value(&self) -> &str {
-        &self.value
-    }
-}
-
 impl FileList {
     pub fn with_files(files: Vec<String>) -> anyhow::Result<Self> {
         let mut table = Vec::new();
         for file in files.into_iter() {
-            table.push((
-                FileName::new(file.clone().into()),
-                FileBuf::new(file, false)?,
-            ));
+            table.push(FileBuf::new(&file, false)?);
         }
         Ok(FileList { table })
     }
 
-    pub fn insert(&mut self, name: Box<str>) -> anyhow::Result<()> {
-        self.table.push((
-            FileName::new(name.clone()),
-            FileBuf::new(name.to_string(), false)?,
-        ));
+    pub fn insert(&mut self, name: &str) -> anyhow::Result<()> {
+        let file = FileBuf::new(name, false)?;
+
+        if self.table.iter().any(|f| f.path() == file.path()) {
+            return Err(anyhow!(
+                "File with path {} is already open",
+                file.path.display()
+            ));
+        }
+
+        self.table.push(file);
         Ok(())
     }
 
     #[inline]
-    pub fn names(&self) -> Vec<&FileName> {
-        self.iter().map(|(f, _)| f).collect()
+    pub fn names(&self) -> Vec<&Path> {
+        self.iter().map(|f| f.path()).collect()
     }
 
     #[inline]
     pub fn get_file_buff(&self, index: usize) -> Option<&FileBuf> {
-        self.get(index).map(|(_, f)| f)
+        self.get(index)
     }
 
     #[inline]
     pub fn get_file_buff_mut(&mut self, index: usize) -> Option<&mut FileBuf> {
-        self.get_mut(index).map(|(_, f)| f)
+        self.get_mut(index)
     }
 }
 
 pub struct FileBuf {
     nulled: bool,
     is_tail: bool,
-    path: Box<str>,
+    path: Box<Path>,
     reader: Option<BufReader<File>>,
     view: RefCell<[usize; 2]>,
     view_update: bool,
@@ -90,15 +78,18 @@ pub struct FileBuf {
 }
 
 impl FileBuf {
-    pub fn new(path: String, is_tail: bool) -> anyhow::Result<Self> {
+    pub fn new(path: &str, is_tail: bool) -> anyhow::Result<Self> {
         let nulled = false;
-        let path = path.to_string().into_boxed_str();
+
+        let path = Path::new(path).canonicalize()?.into_boxed_path();
         let file = File::open(path.as_ref())?;
         let reader = Some(BufReader::new(file));
         let buffer = Vec::new();
         let view = RefCell::new(Default::default());
         let view_update = true;
         let lines = 1;
+
+        log::trace!("Opening a file with path {}", path.display());
 
         Ok(FileBuf {
             nulled,
@@ -114,7 +105,7 @@ impl FileBuf {
 
     pub fn update(&mut self) -> anyhow::Result<()> {
         if self.is_tail && self.reader.is_none() {
-            let file = File::open(self.path.as_ref())?;
+            let file = File::open(self.path())?;
             self.reader = Some(BufReader::new(file));
         }
 
@@ -149,14 +140,14 @@ impl FileBuf {
 
     pub fn detrigger_view_update(&mut self) {
         if self.view_update {
-            log::debug!("Detriggering view update for: {}", self.path);
             self.view_update = false;
         }
     }
 
     pub fn trigger_view_update(&mut self) {
-        if self.view_update { return }
-        log::debug!("Triggering view update for: {}", self.path);
+        if self.view_update {
+            return;
+        }
         self.view_update = true;
     }
 
@@ -164,12 +155,13 @@ impl FileBuf {
     pub fn buffer<'a>(&'a self, rect: Rect) -> (Vec<&'a str>, bool) {
         if self.view_update {
             let mut view = self.view.borrow_mut();
-            view[1] = view[0].saturating_add(rect.as_size().height.into()).saturating_sub(2);
+            view[1] = view[0]
+                .saturating_add(rect.as_size().height.into())
+                .saturating_sub(2);
         }
 
         let len = self.buffer.len();
         let (start, end) = (self.view.borrow()[0], self.view.borrow()[1]);
-        log::debug!("In path: {}, start: {} and end: {}", self.path, start, end);
         let lines = self
             .buffer
             .iter()
@@ -198,7 +190,6 @@ impl FileBuf {
         let len = self.buffer.len();
         let (start, end) = (self.view.borrow()[0], self.view.borrow()[1]);
         if end < len {
-            log::debug!("inside next. start: {}, end: {}", start, end);
             let mut view = self.view.borrow_mut();
             view[0] = start.saturating_add(1);
             view[1] = end.saturating_add(1);
@@ -212,5 +203,10 @@ impl FileBuf {
             view[0] = start.saturating_sub(1);
             view[1] = end.saturating_sub(1);
         }
+    }
+
+    #[inline]
+    pub fn path(&self) -> &Path {
+        &self.path
     }
 }

@@ -6,14 +6,14 @@ mod ui;
 
 use crossterm::{event::*, execute, terminal::*};
 use ratatui::prelude::*;
+use simplelog::WriteLogger;
 use std::{
+    fs::File,
     io::{stdout, Stdout},
     ops::Drop,
     rc::Rc,
     sync::{Arc, Mutex},
-    fs::File,
 };
-use simplelog::WriteLogger;
 
 use crate::input::*;
 use crate::resource::*;
@@ -45,7 +45,9 @@ impl App {
         create_logger()?;
 
         loop {
-            if key_listener(&mut resource)? { break }
+            if key_listener(&mut resource)? {
+                break;
+            }
             state_update(&mut resource);
 
             trigger_view_update(&mut resource);
@@ -132,6 +134,10 @@ pub fn bounded_add(value: usize, other: usize, bound: usize) -> usize {
 fn create_logger() -> anyhow::Result<()> {
     let file = File::create(LOGFILE_NAME)
         .map_err(|err| anyhow::anyhow!("Couldn't create the log file due to: {err}"))?;
-    WriteLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default(), file)?;
+    WriteLogger::init(
+        simplelog::LevelFilter::Trace,
+        simplelog::Config::default(),
+        file,
+    )?;
     Ok(())
 }

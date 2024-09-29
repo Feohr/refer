@@ -1,4 +1,5 @@
 use crossterm::event::*;
+use io::FileBuf;
 use ratatui::widgets::*;
 
 use crate::cursor::*;
@@ -139,7 +140,9 @@ impl FileListState {
 pub fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
     if poll(std::time::Duration::from_millis(DELTA))? {
         let event = read()?;
-        if quit_listener(&event) { return Ok(true) }
+        if quit_listener(&event) {
+            return Ok(true);
+        }
         match res.entry_box().is_visible() {
             true => write_key_event(event, res)?,
             false => normal_key_event(event, res),
@@ -150,25 +153,26 @@ pub fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
 }
 
 pub fn trigger_view_update(res: &mut Resource) {
-    res
-        .files_mut()
+    res.files_mut()
         .iter_mut()
-        .for_each(|(_, f)| f.trigger_view_update());
+        .for_each(FileBuf::trigger_view_update);
 }
 
 pub fn detrigger_view_update(res: &mut Resource) {
-    res
-        .files_mut()
+    res.files_mut()
         .iter_mut()
-        .for_each(|(_, f)| f.detrigger_view_update());
+        .for_each(FileBuf::detrigger_view_update);
 }
 
 fn quit_listener(event: &Event) -> bool {
     if let Event::Key(KeyEvent {
-            code: KeyCode::Char('q'),
-            modifiers: KeyModifiers::CONTROL,
-            ..
-        }) = event { return true }
+        code: KeyCode::Char('q'),
+        modifiers: KeyModifiers::CONTROL,
+        ..
+    }) = event
+    {
+        return true;
+    }
     false
 }
 
@@ -213,11 +217,9 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             }
             if res.pointer().cursor_at::<View>() {
                 let curr_index = res.file_list_state().index();
-                if let Some(curr_buff) = res
-                    .files_mut()
-                    .get_file_buff_mut(curr_index) {
-                        curr_buff.next();
-                    }
+                if let Some(curr_buff) = res.files_mut().get_file_buff_mut(curr_index) {
+                    curr_buff.next();
+                }
             }
         }
         Event::Key(KeyEvent {
@@ -235,11 +237,9 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             }
             if res.pointer().cursor_at::<View>() {
                 let curr_index = res.file_list_state().index();
-                if let Some(curr_buff) = res
-                    .files_mut()
-                    .get_file_buff_mut(curr_index) {
-                        curr_buff.prev();
-                    }
+                if let Some(curr_buff) = res.files_mut().get_file_buff_mut(curr_index) {
+                    curr_buff.prev();
+                }
             }
         }
         Event::Key(KeyEvent {
@@ -295,7 +295,8 @@ fn write_key_event(event: Event, res: &mut Resource) -> anyhow::Result<()> {
             ..
         }) => {
             let name = res.entry_box().input_buff();
-            if res.files_mut().insert(name.clone()).is_err() {
+            if let Err(err) = res.files_mut().insert(&name) {
+                log::trace!("Cannot open file due to: {err}");
                 res.entry_box_mut().set_err();
                 return Ok(());
             }
@@ -303,12 +304,12 @@ fn write_key_event(event: Event, res: &mut Resource) -> anyhow::Result<()> {
             // Clean the entry box
             res.entry_box_mut().clear();
 
-            if !name.is_empty() {
-                let len = res.files().len();
-                res.file_list_state_mut().set_size(len);
-                res.entry_box_mut().set_ok();
+            if name.is_empty() {
+                return Ok(());
             }
-
+            let len = res.files().len();
+            res.file_list_state_mut().set_size(len);
+            res.entry_box_mut().set_ok();
             res.pointer_mut().toggle();
             res.entry_box_mut().toggle();
         }

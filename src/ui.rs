@@ -1,7 +1,8 @@
+use std::path::Path;
+
 use ratatui::{border, prelude::*, widgets::*};
 
 use crate::cursor::*;
-use crate::io::*;
 use crate::resource::*;
 use crate::RectVec;
 
@@ -101,7 +102,7 @@ fn get_cursor_shade_from_condition(cond: bool) -> Style {
     }
 }
 
-fn get_lines_from_buffer<'a>(res: &'a Resource, hflex: Rect) -> Vec<Line<'a>> {
+fn get_lines_from_buffer(res: &Resource, hflex: Rect) -> Vec<Line> {
     let curr_index = res.file_list_state().index();
     let Some(curr_buff) = res.files().get_file_buff(curr_index) else {
         return Default::default(); // Return default
@@ -143,17 +144,17 @@ fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
     ui_list_box(frame, hflex[0], res);
 }
 
-fn get_list<'a>(items: &'a [&'a FileName]) -> List<'a> {
+fn get_list<'a>(items: &[&'a Path]) -> List<'a> {
     List::new(get_list_items(items))
         .block(Block::default().border_style(INVISIBLE))
         .highlight_symbol(" ► ")
         .highlight_style(Style::default().fg(RBG).bg(RFG))
 }
 
-fn get_list_items<'a>(items: &'a [&'a FileName]) -> Vec<ListItem<'a>> {
+fn get_list_items<'a>(items: &[&'a Path]) -> Vec<ListItem<'a>> {
     items
-        .into_iter()
-        .map(|i| ListItem::new(i.value()))
+        .iter()
+        .map(|&i| ListItem::new(i.as_os_str().to_str().unwrap_or_default()))
         .collect::<Vec<ListItem>>()
 }
 
