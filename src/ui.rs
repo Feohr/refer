@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use ratatui::{border, prelude::*, widgets::*};
 
 use crate::cursor::*;
@@ -144,17 +142,17 @@ fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
     ui_list_box(frame, hflex[0], res);
 }
 
-fn get_list<'a>(items: &[&'a Path]) -> List<'a> {
+fn get_list<'a>(items: &[&'a str]) -> List<'a> {
     List::new(get_list_items(items))
         .block(Block::default().border_style(INVISIBLE))
         .highlight_symbol(" ► ")
         .highlight_style(Style::default().fg(RBG).bg(RFG))
 }
 
-fn get_list_items<'a>(items: &[&'a Path]) -> Vec<ListItem<'a>> {
+fn get_list_items<'a>(items: &[&'a str]) -> Vec<ListItem<'a>> {
     items
         .iter()
-        .map(|&i| ListItem::new(i.as_os_str().to_str().unwrap_or_default()))
+        .map(|&i| ListItem::new(i))
         .collect::<Vec<ListItem>>()
 }
 

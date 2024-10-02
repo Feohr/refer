@@ -51,8 +51,8 @@ impl FileList {
     }
 
     #[inline]
-    pub fn names(&self) -> Vec<&Path> {
-        self.iter().map(|f| f.path()).collect()
+    pub fn names(&self) -> Vec<&str> {
+        self.iter().map(|f| f.name()).collect()
     }
 
     #[inline]
@@ -69,6 +69,7 @@ impl FileList {
 pub struct FileBuf {
     nulled: bool,
     is_tail: bool,
+    name: Box<str>,
     path: Box<Path>,
     reader: Option<BufReader<File>>,
     view: RefCell<[usize; 2]>,
@@ -81,6 +82,7 @@ impl FileBuf {
     pub fn new(path: &str, is_tail: bool) -> anyhow::Result<Self> {
         let nulled = false;
 
+        let name = path.to_string().into_boxed_str();
         let path = Path::new(path).canonicalize()?.into_boxed_path();
         let file = File::open(path.as_ref())?;
         let reader = Some(BufReader::new(file));
@@ -94,6 +96,7 @@ impl FileBuf {
         Ok(FileBuf {
             nulled,
             is_tail,
+            name,
             path,
             reader,
             view,
@@ -208,5 +211,10 @@ impl FileBuf {
     #[inline]
     pub fn path(&self) -> &Path {
         &self.path
+    }
+
+    #[inline]
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }
