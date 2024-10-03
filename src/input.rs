@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use crossterm::event::*;
 use io::FileBuf;
 use ratatui::widgets::*;
@@ -135,6 +136,17 @@ impl FileListState {
     pub fn get_mut(&mut self) -> &mut ListState {
         &mut self.state
     }
+
+    pub fn close(&mut self) -> anyhow::Result<usize> {
+        if self.size == 0 {
+            return Err(anyhow!("ListState empty"));
+        }
+        let res = self.index;
+        self.size = self.size.saturating_sub(1);
+        self.index = self.index.min(self.size.saturating_sub(1));
+        self.state.select(Some(self.index));
+        Ok(res)
+    }
 }
 
 pub fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
@@ -185,6 +197,17 @@ fn normal_key_event(event: Event, res: &mut Resource) {
         }) => {
             res.pointer_mut().toggle();
             res.entry_box_mut().toggle();
+        }
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('d'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => {
+            let id = match res.file_list_state_mut().close() {
+                Ok(id) => id,
+                Err(_) => return,
+            };
+            res.files_mut().close(id);
         }
         Event::Key(KeyEvent {
             code: KeyCode::Left,
