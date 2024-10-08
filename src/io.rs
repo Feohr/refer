@@ -50,6 +50,10 @@ impl FileList {
         Ok(())
     }
 
+    pub fn close(&mut self, id: usize) {
+        self.table.remove(id);
+    }
+
     #[inline]
     pub fn names(&self) -> Vec<&str> {
         self.iter().map(|f| f.name()).collect()
