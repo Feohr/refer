@@ -38,17 +38,14 @@ impl EntryBox {
     }
 
     pub fn complete(&mut self) {
-        let mut path: Vec<String> = self
-            .input_buff()
-            .split("/")
-            .map(|s| s.to_string())
-            .collect();
+        if !self.input_buff.starts_with("./") {
+            self.input_buff = "./".to_string() + &self.input_buff;
+        }
 
-        let file_idx = path.len() - 1;
-        let file = &path[file_idx];
-        let dir = "./".to_string() + &path[..file_idx].join("/") + "/";
+        let path: Vec<&str> = self.input_buff.split("/").collect();
+        let path = &path[..path.len().saturating_sub(1)].join("/");
 
-        let filenames = match read_dir(&dir) {
+        let filenames = match read_dir(path) {
             Ok(f) => f,
             Err(_) => return,
         };
@@ -56,11 +53,12 @@ impl EntryBox {
             .into_iter()
             .filter(|file| file.is_ok())
             .map(|file| file.unwrap().path().display().to_string())
-            .map(|file| file.strip_prefix(&dir).expect("Wrong format").to_string())
             .collect();
 
-        path[file_idx] = complete(filenames, file);
-        self.input_buff = path.join("/");
+        self.input_buff = complete(filenames, &self.input_buff)
+            .strip_prefix("./")
+            .expect("File path string should always start with ./")
+            .to_string();
     }
 
     pub fn pop(&mut self) {
