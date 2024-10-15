@@ -1,13 +1,19 @@
+///Returns greatest common prefix of two strings
 fn gcp(s1: String, s2: String) -> String {
-    let ((_, _), idx) = s1
+    if let Some((idx, (_, _))) = s1
         .chars()
         .zip(s2.chars())
-        .zip(0..s1.len())
-        .find(|((c1, c2), _)| c1 != c2)
-        .unwrap_or((('0', '0'), s1.len().min(s2.len())));
-    s1[..idx].to_string()
+        .enumerate()
+        .find(|(_, (c1, c2))| c1 != c2)
+    {
+        s1[..idx].to_string()
+    } else {
+        s1[..s1.len().min(s2.len())].to_string()
+    }
 }
 
+///Returns greatest common prefix of all strings from the vector that contain specified prefix
+///If none of the strings contain specified prefix returns prefix
 pub fn complete(mut filenames: Vec<String>, prefix: &String) -> String {
     filenames.retain(|s| s.starts_with(prefix));
     filenames
