@@ -1,9 +1,7 @@
 <div>
     <p align="center">
-        <img src="docs/logo/ReferLogoWithBGx250.svg">
-    </p>
-    <p align="center">
-        <img src="docs/logo/ReferLogoName.svg">
+        <img src="docs/logo/ReferLogoName.svg" height=125px>
+        <img src="docs/logo/ReferLogoWithBGx250.svg" height=125px>
     </p>
     <p align="center">
         <a href="https://github.com/Feohr/refer/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-green" height=24px></a>
