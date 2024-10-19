@@ -9,7 +9,7 @@
         &nbsp;
         &nbsp;
         &nbsp;
-        <a href="mailto:mdrehaan123w@gmail.com"><img src="./docs/social/gmail.svg" height=32px></a>
+        <a href="mailto:mohammedrehaan.work@gmail.com"><img src="./docs/social/gmail.svg" height=32px></a>
         <a href="https://github.com/Feohr"><img src="./docs/social/github.svg" height=32px></a>
         <a href="https://www.linkedin.com/in/mohammed-rehaan-193305222/"><img src="./docs/social/linkedin.svg" height=32px></a>
     </p>

@@ -26,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#505050"
      inkscape:document-units="mm"
-     inkscape:zoom="2.612942"
-     inkscape:cx="46.690665"
-     inkscape:cy="143.51639"
+     inkscape:zoom="1.847629"
+     inkscape:cx="-33.015286"
+     inkscape:cy="264.12229"
      inkscape:window-width="2560"
      inkscape:window-height="1371"
      inkscape:window-x="0"
@@ -173,13 +173,85 @@
          in2="SourceGraphic"
          id="feComposite73" />
     </filter>
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Drop Shadow"
+       id="filter14"
+       x="-0.21659654"
+       y="-0.21659654"
+       width="1.4331931"
+       height="1.4331931">
+      <feFlood
+         result="flood"
+         in="SourceGraphic"
+         flood-opacity="0.137255"
+         flood-color="rgb(0,0,0)"
+         id="feFlood13" />
+      <feGaussianBlur
+         result="blur"
+         in="SourceGraphic"
+         stdDeviation="5.000000"
+         id="feGaussianBlur13" />
+      <feOffset
+         result="offset"
+         in="blur"
+         dx="-0.000000"
+         dy="-0.000000"
+         id="feOffset13" />
+      <feComposite
+         result="comp1"
+         operator="out"
+         in="flood"
+         in2="offset"
+         id="feComposite13" />
+      <feComposite
+         result="fbSourceGraphic"
+         operator="atop"
+         in="comp1"
+         in2="SourceGraphic"
+         id="feComposite14" />
+      <feColorMatrix
+         result="fbSourceGraphicAlpha"
+         in="fbSourceGraphic"
+         values="0 0 0 -1 0 0 0 0 -1 0 0 0 0 -1 0 0 0 0 1 0"
+         id="feColorMatrix18" />
+      <feFlood
+         id="feFlood18"
+         result="flood"
+         in="fbSourceGraphic"
+         flood-opacity="0.137255"
+         flood-color="rgb(0,0,0)" />
+      <feGaussianBlur
+         id="feGaussianBlur18"
+         result="blur"
+         in="fbSourceGraphic"
+         stdDeviation="5.000000" />
+      <feOffset
+         id="feOffset18"
+         result="offset"
+         in="blur"
+         dx="-0.000000"
+         dy="-0.000000" />
+      <feComposite
+         id="feComposite18"
+         result="comp1"
+         operator="out"
+         in="flood"
+         in2="offset" />
+      <feComposite
+         id="feComposite19"
+         result="comp2"
+         operator="atop"
+         in="comp1"
+         in2="fbSourceGraphic" />
+    </filter>
   </defs>
   <g
      id="g1"
      inkscape:label="FullLogo"
      transform="matrix(7.0168853,0,0,7.0168853,3.368105,3.368105)">
     <rect
-       style="fill:#ffffff;stroke-width:0.264583;filter:url(#filter73)"
+       style="fill:#d9d9d9;stroke-width:0.264583;filter:url(#filter73);fill-opacity:1"
        id="rect1"
        width="8.4666662"
        height="8.4666662"
@@ -190,7 +262,7 @@
     <g
        id="g464"
        inkscape:label="Logo"
-       style="display:inline;filter:url(#filter487)"
+       style="display:inline"
        transform="matrix(0.01760835,0.01760835,-0.01760835,0.01760835,4.7296365,-0.01660029)"
        inkscape:tile-cx="135.26075"
        inkscape:tile-cy="135.26097"
@@ -214,7 +286,7 @@
          id="g463"
          inkscape:label="Glass">
         <circle
-           style="fill:#c1e8e6;fill-opacity:1;stroke-width:0.264999;stroke-dasharray:none;filter:url(#filter214)"
+           style="fill:#a6a6a6;fill-opacity:1;stroke-width:0.264999;stroke-dasharray:none;filter:url(#filter14)"
            id="circle462"
            cx="105"
            cy="81.234818"
