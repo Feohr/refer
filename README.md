@@ -1,5 +1,3 @@
-# Refer
-
 <div>
     <p align="center">
         <img src="docs/logo/ReferLogoWithBGx250.svg">
