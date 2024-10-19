@@ -1,19 +1,17 @@
 # Refer
 
-<div align="center">
-
-<img src="docs/ReferLogo.png" height=100 />
-
-A TUI app to open, read and tail multiple text files at once. Refer also provides convenient key shortcuts to make navigation simple and fast.
-
+<div>
+    <div align="center">
+        <img src="docs/logo/ReferLogoWithBGx250.svg">
+    </div>
+    <div align="center">
+        <img src="docs/logo/ReferLogoName.svg">
+    </div>
+    <br>
+    <p>A TUI app to open, read and tail multiple text files at once. Refer also provides convenient key shortcuts to make navigation simple and fast.</p>
 </div>
-
-
-<div align="center">
 
 ![](docs/ReferDemo.gif)
-
-</div>
 
 ## Installation
 
