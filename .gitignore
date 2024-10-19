@@ -1,5 +1,4 @@
 /target
 *.swp
-*.svg
 perf.data*
 *.log

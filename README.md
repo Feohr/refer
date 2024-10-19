@@ -1,19 +1,23 @@
-# Refer
-
-<div align="center">
-
-<img src="docs/ReferLogo.png" height=100 />
-
-A TUI app to open, read and tail multiple text files at once. Refer also provides convenient key shortcuts to make navigation simple and fast.
-
+<div>
+    <p align="center">
+        <img src="docs/logo/ReferLogoName.svg" height=125px>
+        <img src="docs/logo/ReferLogoWithBGx250.svg" height=125px>
+    </p>
+    <p align="center">
+        <a href="https://github.com/Feohr/refer/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-green" height=24px></a>
+        <a href="https://github.com/Feohr/refer"><img alt="Built with rust" src="https://img.shields.io/badge/built_with-rust-orange" height=24px></a>
+        &nbsp;
+        &nbsp;
+        &nbsp;
+        <a href="mailto:mohammedrehaan.work@gmail.com"><img src="./docs/social/gmail.svg" height=32px></a>
+        <a href="https://github.com/Feohr"><img src="./docs/social/github.svg" height=32px></a>
+        <a href="https://www.linkedin.com/in/mohammed-rehaan-193305222/"><img src="./docs/social/linkedin.svg" height=32px></a>
+    </p>
 </div>
 
-
-<div align="center">
+A TUI app to open, read and tail multiple text files at once. Refer also provides convenient key shortcuts to make navigation simple and fast.</p>
 
 ![](docs/ReferDemo.gif)
-
-</div>
 
 ## Installation
 
