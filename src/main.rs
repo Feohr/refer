@@ -3,7 +3,7 @@ pub mod input;
 pub mod io;
 pub mod resource;
 mod ui;
-pub mod utils;
+mod utils;
 
 use crossterm::{event::*, execute, terminal::*};
 use ratatui::prelude::*;
