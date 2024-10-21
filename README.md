@@ -30,7 +30,7 @@
         <a href="https://www.linkedin.com/in/mohammed-rehaan-193305222/">
             <picture>
                 <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/main/docs/social/linkedinDark.svg" height=32px>
-                <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/docs/main/social/linkedin.svg" height=32px>
+                <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/main/docs/social/linkedin.svg" height=32px>
                 <img alt="LinkedIn" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
             </picture>
         </a>
