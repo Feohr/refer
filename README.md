@@ -1,11 +1,10 @@
 <div>
     <p align="center">
-        <!-- <picture>
-            <source media="(prefers-color-scheme: dark)" srcset="docs/logo/ReferLogoNameDark.svg" height=125px>
-            <source media="(prefers-color-scheme: light)" srcset="docs/logo/ReferLogoName.svg" height=125px>
-            <img alt="Logo Name" src="docs/logo/ReferLogoNameDark.svg" height=125px>
-        </picture> -->
-        <img alt="Logo Name" src="docs/logo/ReferLogoNameDark.svg" height=125px>
+        <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/docs/readme/docs/logo/ReferLogoNameDark.svg" height=125px>
+            <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/docs/readme/docs/logo/ReferLogoName.svg" height=125px>
+            <img alt="Logo Name" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
+        </picture>
         <img src="docs/logo/ReferLogoWithBGx250.svg" height=125px>
     </p>
     <p align="center">
