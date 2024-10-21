@@ -39,6 +39,8 @@
 
 A TUI app to open, read and tail multiple text files at once. Refer also provides convenient key shortcuts to make navigation simple and fast.</p>
 
+> ### Currently this project is incomplete.
+
 ![](docs/ReferDemo.gif)
 
 ## Installation
