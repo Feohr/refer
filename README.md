@@ -1,6 +1,11 @@
 <div>
     <p align="center">
-        <img src="docs/logo/ReferLogoName.svg" height=125px>
+        <!-- <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="docs/logo/ReferLogoNameDark.svg" height=125px>
+            <source media="(prefers-color-scheme: light)" srcset="docs/logo/ReferLogoName.svg" height=125px>
+            <img alt="Logo Name" src="docs/logo/ReferLogoNameDark.svg" height=125px>
+        </picture> -->
+        <img alt="Logo Name" src="docs/logo/ReferLogoNameDark.svg" height=125px>
         <img src="docs/logo/ReferLogoWithBGx250.svg" height=125px>
     </p>
     <p align="center">
