@@ -1,6 +1,10 @@
 <div>
     <p align="center">
-        <img src="docs/logo/ReferLogoName.svg" height=125px>
+        <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/docs/readme/docs/logo/ReferLogoNameDark.svg" height=125px>
+            <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/docs/readme/docs/logo/ReferLogoName.svg" height=125px>
+            <img alt="Logo Name" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
+        </picture>
         <img src="docs/logo/ReferLogoWithBGx250.svg" height=125px>
     </p>
     <p align="center">
@@ -9,9 +13,27 @@
         &nbsp;
         &nbsp;
         &nbsp;
-        <a href="mailto:mohammedrehaan.work@gmail.com"><img src="./docs/social/gmail.svg" height=32px></a>
-        <a href="https://github.com/Feohr"><img src="./docs/social/github.svg" height=32px></a>
-        <a href="https://www.linkedin.com/in/mohammed-rehaan-193305222/"><img src="./docs/social/linkedin.svg" height=32px></a>
+        <a href="mailto:mohammedrehaan.work@gmail.com">
+            <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/docs/readme/docs/social/gmailDark.svg" height=32px>
+                <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/docs/readme/docs/social/gmail.svg" height=32px>
+                <img alt="Mail" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
+            </picture>
+        </a>
+        <a href="https://github.com/Feohr">
+            <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/docs/readme/docs/social/githubDark.svg" height=32px>
+                <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/docs/readme/docs/social/github.svg" height=32px>
+                <img alt="Github" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
+            </picture>
+        </a>
+        <a href="https://www.linkedin.com/in/mohammed-rehaan-193305222/">
+            <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/docs/readme/docs/social/linkedinDark.svg" height=32px>
+                <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Feohr/refer/refs/heads/docs/readme/docs/social/linkedin.svg" height=32px>
+                <img alt="LinkedIn" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
+            </picture>
+        </a>
     </p>
 </div>
 
