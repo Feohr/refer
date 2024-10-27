@@ -13,6 +13,3 @@ ratatui = { version = "0.26.3", features = ["macros"] }
 sha1_smol = { version = "1.0.1", features = ["alloc", "std"] }
 simplelog = "0.12.2"
 uuid = { version = "1.10.0", features = ["v8"] }
-
-# [profile.release]
-# debug=true # only for flamegraph

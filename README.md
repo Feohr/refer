@@ -76,3 +76,11 @@ Run directly via the terminal. The binary expects a space separated array of fil
 | `ctrl + t`        | toggle tail mode                      |
 | `(h or ←)`        | switch to file list                   |
 | `(l or →)`        | switch to file buffer                 |
+
+## Contributing
+
+Any contributions wether big or small are welcomed whole-heartedly. Your involvement in refer is encouraged. If you wish to help, please refer to [_Contribution guidelines_](./CONTRIBUTING.md).
+
+## License
+
+This project is licensed under the [MIT license](./LICENSE).
