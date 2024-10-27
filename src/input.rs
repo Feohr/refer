@@ -1,11 +1,14 @@
+use std::fs::read_dir;
+
 use anyhow::anyhow;
 use crossterm::event::*;
-use io::FileBuf;
 use ratatui::widgets::*;
 
 use crate::cursor::*;
 use crate::resource::*;
 use crate::*;
+use io::FileBuf;
+use utils::complete;
 
 pub const DELTA: u64 = 16;
 
@@ -33,6 +36,41 @@ impl EntryBox {
 
     pub fn push(&mut self, ch: char) {
         self.input_buff.push(ch);
+    }
+
+    pub fn complete(&mut self) {
+        let mut new_buff = if self.input_buff.starts_with("/") {
+            self.input_buff.to_string()
+        } else {
+            "./".to_string() + &self.input_buff
+        };
+
+        let path: Vec<&str> = new_buff.split("/").collect();
+        let path = path[..path.len().saturating_sub(1)].join("/") + "/";
+
+        let Ok(filenames) = read_dir(path) else {
+            return;
+        };
+        let filenames = filenames
+            .filter_map(|file| file.ok())
+            .map(|file| {
+                let is_dir = if let Ok(md) = file.metadata() {
+                    md.is_dir()
+                } else {
+                    false
+                };
+
+                file.path().display().to_string() + if is_dir { "/" } else { "" }
+            })
+            .collect();
+
+        new_buff = complete(filenames, &new_buff);
+        new_buff = match new_buff.strip_prefix("./") {
+            Some(s) => s.to_string(),
+            None => new_buff,
+        };
+
+        self.input_buff = new_buff;
     }
 
     pub fn pop(&mut self) {
@@ -312,6 +350,11 @@ fn write_key_event(event: Event, res: &mut Resource) -> anyhow::Result<()> {
             res.pointer_mut().toggle();
             res.entry_box_mut().clear();
             res.entry_box_mut().toggle();
+        }
+        Event::Key(KeyEvent {
+            code: KeyCode::Tab, ..
+        }) => {
+            res.entry_box.complete();
         }
         Event::Key(KeyEvent {
             code: KeyCode::Enter,
