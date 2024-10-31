@@ -8,6 +8,7 @@ ansi-to-tui = "4.0.1"
 anyhow = "1.0.86"
 clap = { version = "4.5.7", features = ["derive"] }
 crossterm = "0.27.0"
+dirs = "5.0.1"
 log = "0.4.22"
 ratatui = { version = "0.26.3", features = ["macros"] }
 sha1_smol = { version = "1.0.1", features = ["alloc", "std"] }
