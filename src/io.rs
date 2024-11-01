@@ -237,6 +237,25 @@ impl FileBuf {
         }
     }
 
+    pub fn top(&mut self) {
+        let (start, end) = (self.view.borrow()[0], self.view.borrow()[1]);
+        if start > 0 {
+            let mut view = self.view.borrow_mut();
+            view[0] = 0;
+            view[1] = end - start;
+        }
+    }
+    pub fn bottom(&mut self) {
+        let len = self.buffer.len();
+        let (start, end) = (self.view.borrow()[0], self.view.borrow()[1]);
+        if end < len {
+            let diff = len.saturating_sub(end);
+            let mut view = self.view.borrow_mut();
+            view[0] = start.saturating_add(diff);
+            view[1] = end.saturating_add(diff);
+        }
+    }
+
     #[inline]
     pub fn path(&self) -> &Path {
         &self.path
