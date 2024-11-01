@@ -341,6 +341,12 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             if res.pointer().cursor_at::<Files>() {
                 res.file_list_state_mut().bottom();
             }
+            if res.pointer().cursor_at::<View>() {
+                let curr_index = res.file_list_state().index();
+                if let Some(curr_buff) = res.files_mut().get_file_buff_mut(curr_index) {
+                    curr_buff.bottom();
+                }
+            }
         }
         Event::Key(KeyEvent {
             code: KeyCode::Up,
@@ -354,6 +360,12 @@ fn normal_key_event(event: Event, res: &mut Resource) {
         }) => {
             if res.pointer().cursor_at::<Files>() {
                 res.file_list_state_mut().top();
+            }
+            if res.pointer().cursor_at::<View>() {
+                let curr_index = res.file_list_state().index();
+                if let Some(curr_buff) = res.files_mut().get_file_buff_mut(curr_index) {
+                    curr_buff.top();
+                }
             }
         }
         _ => {}

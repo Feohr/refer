@@ -18,6 +18,11 @@ The format is roughly based on [*`Keep a Changelog`*](https://keepachangelog.com
     - [`Pull request`]  : https://github.com/Feohr/refer/pull/12
     - [`Description`]   : Entry box has an auto-completion feature.
 
+3) [`feature`] : [@Feohr][Feohr]
+    - [`Issue`]         : https://github.com/Feohr/refer/issues/3
+    - [`Pull request`]  : https://github.com/Feohr/refer/pull/19
+    - [`Description`]   : `ctrl + k` and `ctrl + j` move the cursor to top and bottom respectively.
+
 ### Changed
 
 1) [`fix`]     : [@mtsalt][mtsalt]
