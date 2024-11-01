@@ -79,7 +79,7 @@ Run directly via the terminal. The binary expects a space separated array of fil
 
 ## Contributing
 
-Any contributions wether big or small are welcomed whole-heartedly. Your involvement in refer is encouraged. If you wish to help, please refer to [_Contribution guidelines_](./CONTRIBUTING.md).
+Any contributions whether big or small are welcomed whole-heartedly. If you wish to help, please refer to the [_Contribution guidelines_](./CONTRIBUTING.md).
 
 ## License
 

@@ -1,15 +1,18 @@
 # How to contribute
 
+## :heart: **Firstly, thank you for deciding to contribute to the project**:grey_exclamation: :heart:
+
+Please take a few moments and read the steps below to learn how to get started with your first contribution:
+
 ## Create a branch
 
-Firstly fork our repository into your own [_Github_](https://www.github.com) account, and create
+Fork our repository into your own [_Github_](https://www.github.com) account, and create
 a local clone. Once done and you have the code locally on the disk, you can get started. Try
 not work directly on the [_main_](https://www.github.com/Feohr/refer/tree/main) branch,
 but create a separate branch for each issue you are working on. There is no set rule on the
 naming of branches but, it is good practice to add the intent of the branch in the prefix. For
 example, a feature branch would be `feature/<feature-description>`. Correspondingly, **bugfix**,
-**docs**, **hotfix** and **release** are valid branch prefixes. Notice how there is no use of `_`
-or `camelCase`-ing in the branch name, only `-`.
+**docs**, **hotfix** and **release** are valid branch prefixes. Notice how there is no use of `_` or `camelCase`-ing in the branch name, only `-`.
 
 ## Style guide
 
@@ -17,7 +20,7 @@ or `camelCase`-ing in the branch name, only `-`.
 simply use [_cargo fmt_](https://github.com/rust-lang/rustfmt) in combination with [_cargo
 clippy_](https://doc.rust-lang.org/clippy/usage.html).
 
-- When importing items to use within the module, order them accordinly:
+- When importing items to use within the module, ordering them accordinly helps maintain code readablity:
 
     ```rust
     // core std imports
@@ -30,29 +33,29 @@ clippy_](https://doc.rust-lang.org/clippy/usage.html).
     use crate::io::FileList;
     ```
 
-- Avoid over nesting. Anything beyond 4 levels of nesting requires
-rewriting. There are several ways to avoid over-nesting. Have a look at this
-[`video`](https://www.youtube.com/watch?v=CFRhGnuXG-4) to learn more.
+- It is always better to avoid over nesting. Anything beyond 4 levels of nesting
+should require rewriting. There are several ways to avoid over-nesting.
+Please have a look at this [`video`](https://www.youtube.com/watch?v=CFRhGnuXG-4) to learn more.
 
-- Keep variable names short and understandable. Variable name should explain what that variable
-is used for. Don't make variable name too short.
+- Variable names should be short and understandable. They should explain what that variable
+is used for. Try not to make them too short as well.
 
     ```rust
-    // Bad variable names.
+    // Variable names that are not ideal.
     let r = Resource::new();
     let rsrc = Resource::new();
 
     // Instead add an understandable variable name.
     let resource = Resource::new();
     ```
-- If you require more than 2 words to describe a variable, refactor and change the name. A
+- One shouldn't require more than 2 words to describe a variable, wouldn't you agree? A
 variable can acquire meaning based on the context hence, it is not necessary to make the
-variable name too specific if the meaning can be drawn from context easily.
+variable name too specific if the meaning can be drawn from the context easily.
 
     ```rust
     // This variable name would suffice given the context.
     let resource = Resource::new();
-    // This kind of name would be counter-productive.
+    // This kind of name could be counter-productive.
     let main_resource = Resource::new();
 
     // It is also better to use abbreviations if their meaning can be easily derived.
@@ -63,9 +66,9 @@ variable name too specific if the meaning can be drawn from context easily.
     fn foo(res: &Resource);
     ```
 
-- **DO NOT** declare a function inside a function. Just... why?
+- You may not declare a function inside a function.
 
-- Rust has some neat pattern matching syntax. Use it.
+- Rust has some neat pattern matching syntax. Do use them.
 
     ```rust
     // Instead of this.
@@ -100,29 +103,41 @@ variable name too specific if the meaning can be drawn from context easily.
     }
     ```
 
-- Avoid panicking. Use `expect` at the very least. Return error when possible.
+- Using `expect` instead of `panic` is almost always better; Returning an error is the best way to handle issues.
 
-- A PR should not have any warnings and no `todo` macros.
-
-- Not a requirement but you can add code comments
+- Not a strict requirement but you may add code comments
 where necessary. In case of doc comments follow the [_rust doc comment
-conventions_](https://github.com/rust-lang/rfcs/blob/master/text/1574-more-api-documentation-conventions.md#appendix-a-full-conventions-text).
-It is perfectly okay to not add any comments at all as long as your code is readable. If there
-are parts to your code that are unreadable i.e. require comments, you would be informed during
-the PR. If you wish to write doc comments for the whole project, please go ahead by all means.
+conventions_](https://github.com/rust-lang/rfcs/blob/master/text/1574-more-api-documentation-conventions.md#appendix-a-full-conventions-text). It is perfectly okay to not add any comments at all as long as your code is readable. If there are parts to your code that are unreadable i.e. require comments, you may be reminded during the PR. If you wish to write doc comments for the whole project, please go ahead by all means.
 
 ## Create pull request
 
 Once done with the code, create a pull request and reference the issue that it addresses,
 if any. Squash the commits to one and add a short, meaningful message.
 
-Issues can have either `patch` or `minor` flag associated with them; which imposes upon the
+Issues may have either `patch` or `minor` flag associated with them; which imposes upon the
 contributor the responsibility to increment the corresponding version in `Cargo.toml` adhering
 to the [_SemVer_](https://semver.org) convention.
 
+Additionally, you might want to add an entry in the [`CHANGELOG.md`](./CHANGELOG.md) either under `Added`, `Changed` or `Removed` section however it applies to your contribution. Please refer to the below format:
+
+```markdown
+1) [`feature` | `fix` | `hotfix` ] : [@contributor_name][link]
+    - [`Issue`]         : https://github.com/Feohr/refer/issues/#<id>
+    - [`Pull request`]  : https://github.com/Feohr/refer/pull/#<id>
+    - [`Description`]   : Explain the contribution in present tense.
+    <!--
+        Example 1: The bug that caused the said issue is fixed.
+        Example 2: A feature that does as such.
+    -->
+
+    <!-- Add the link at the end of the file -->
+    [link]: https://link/to/contributor/profile
+```
+
+## Submit a new issue
+
+In case, you have found a bug in the software, have a new feature idea that you believe would improve refer or might want to tweak the documentation, please navigate to the [*issues*](https://github.com/Feohr/refer/issues) page and submit a new issue with the applicable labels. You may also start working on it by assigning it to yourself.
+
 ## Notice
 
-Unless you explicitly state otherwise, any contribution submitted for inclusion in the work
-by you shall be licensed as stated in the
-[_project_](https://raw.githubusercontent.com/Feohr/refer/refs/heads/main/LICENSE), without
-any additional terms or conditions.
+Unless you explicitly state otherwise, any contribution submitted for inclusion in the work by you shall be licensed as stated in the [_project_](https://raw.githubusercontent.com/Feohr/refer/refs/heads/main/LICENSE), without any additional terms or conditions.
