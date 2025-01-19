@@ -97,7 +97,7 @@ fn ui_main(frame: &mut Frame, vflex: RectVec, res: &mut Resource) {
         .constraints([Constraint::Min(40), Constraint::Percentage(100)])
         .split(vflex[1]);
 
-    ui_text(frame, hflex, res);
+    ui_main_frame(frame, hflex, res);
     ui_header(frame, vflex[0]);
 }
 
@@ -137,7 +137,12 @@ fn get_lines_from_buffer(res: &Resource, hflex: Rect) -> Vec<Line> {
         .collect::<Vec<Line>>()
 }
 
-fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
+fn ui_main_frame(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
+    ui_list_box_main(frame, hflex[0], res);
+    ui_text_main(frame, hflex[1], res);
+}
+
+fn ui_list_box_main(frame: &mut Frame, hflex: Rect, res: &mut Resource) {
     let cursor = res.pointer();
 
     frame.render_widget(
@@ -148,11 +153,17 @@ fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
             .border_style(get_cursor_shade_from_condition(cursor.cursor_at::<Files>()))
             .border_type(BORDER)
             .style(Style::default().bg(RBG).fg(RFG)),
-        hflex[0],
+        hflex,
     );
 
+    ui_list_box(frame, hflex, res);
+}
+
+fn ui_text_main(frame: &mut Frame, hflex: Rect, res: &mut Resource) {
+    let cursor = res.pointer();
+
     frame.render_widget(
-        Paragraph::new(get_lines_from_buffer(res, hflex[1]))
+        Paragraph::new(get_lines_from_buffer(res, hflex))
             .block(
                 Block::default()
                     .borders(border!(ALL))
@@ -161,10 +172,8 @@ fn ui_text(frame: &mut Frame, hflex: RectVec, res: &mut Resource) {
                     .style(Style::default().bg(RBG).fg(RFG)),
             )
             .wrap(Wrap { trim: false }),
-        hflex[1],
+        hflex,
     );
-
-    ui_list_box(frame, hflex[0], res);
 }
 
 fn get_list<'a>(items: &[&'a str]) -> List<'a> {
