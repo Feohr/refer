@@ -34,7 +34,6 @@ const RFG: Color = Color::Gray;
 const RBG: Color = Color::Rgb(20, 20, 20);
 const DFG: Color = Color::Rgb(80, 80, 80);
 const EFG: Color = Color::LightRed;
-const LOG: Color = Color::DarkGray;
 
 const BLOCK: Style = Style {
     fg: Some(RFG),
@@ -51,7 +50,7 @@ const ERR: Style = Style {
     sub_modifier: Modifier::empty(),
 };
 const LOG_MSG: Style = Style {
-    fg: Some(LOG),
+    fg: Some(EFG),
     bg: Some(RBG),
     underline_color: None,
     add_modifier: Modifier::empty(),
@@ -76,8 +75,10 @@ const HEADERS: &str = "\
     (ctrl) + (q) quit  │  \
     (ctrl) + (n) new file  │  \
     (ctrl) + (d) delete file  │  \
-    (ctrl) + (j or ↑) up  │  \
-    (ctrl) + (k or ↓) down  │  \
+    (ctrl) + (j) top  │  \
+    (ctrl) + (k) bottom  │  \
+    (ctrl) + (h) cursor at files | \
+    (ctrl) + (l) cursor at text | \
     (ctrl) + (t) toggle tailing";
 
 pub fn ui(frame: &mut Frame, res: &mut Resource) {

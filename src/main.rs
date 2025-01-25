@@ -30,19 +30,28 @@ pub mod resource;
 mod ui;
 mod utils;
 
-use crossterm::{event::*, execute, terminal::*};
-use ratatui::prelude::*;
-use simplelog::WriteLogger;
 use std::{
     fs::{create_dir_all, OpenOptions},
     io::{stdout, Stdout},
     ops::Drop,
     rc::Rc,
     sync::{Arc, Mutex},
+    thread::sleep,
+    time::Duration,
 };
+
+use crossterm::{event::*, execute, terminal::*};
+use ratatui::prelude::*;
+use simplelog::WriteLogger;
 
 use crate::input::*;
 use crate::resource::*;
+
+/*
+ * fps: 30
+ * 1 second in millis: 1000
+ * */
+const SLEEP_DURATION: u64 = 1000 / 30;
 
 const LOGFILE_NAME: &str = "refer.log";
 pub type RectVec = Rc<[Rect]>;
@@ -70,15 +79,19 @@ impl App {
         let mut resource = Resource::new()?;
         create_logger()?;
 
-        loop {
-            if key_listener(&mut resource)? {
-                break;
-            }
-            state_update(&mut resource);
-
+        'draw: loop {
             trigger_view_update(&mut resource);
             self.terminal.draw(|f| ui::ui(f, &mut resource))?;
             detrigger_view_update(&mut resource);
+
+            let key_listen_reponse = key_listener(&mut resource)?;
+            if key_listen_reponse.should_exit() {
+                break 'draw;
+            }
+
+            state_update(&mut resource);
+
+            sleep(Duration::from_millis(SLEEP_DURATION));
         }
 
         Ok(())
@@ -108,6 +121,8 @@ fn main() -> anyhow::Result<()> {
     std::panic::set_hook({
         let panic_buff = panic_buff.clone();
         Box::new(move |info| {
+            // Some arbitrary type message if we cannot get it from the error.
+            let default_type = "Box<dyn Any>";
             let mut panic_buff = panic_buff
                 .lock()
                 .expect("Couldn't get lock on error buffer");
@@ -115,7 +130,7 @@ fn main() -> anyhow::Result<()> {
                 Some(s) => *s,
                 None => match info.payload().downcast_ref::<String>() {
                     Some(s) => &s[..],
-                    None => "Box<dyn Any>",
+                    None => &default_type,
                 },
             };
             panic_buff.push_str(msg);

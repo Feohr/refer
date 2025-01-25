@@ -212,11 +212,33 @@ impl FileListState {
     }
 }
 
-pub fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
+pub struct KeyListenerResponse {
+    should_exit: bool,
+    polled: bool,
+}
+
+impl KeyListenerResponse {
+    pub fn should_exit(&self) -> bool {
+        self.should_exit
+    }
+
+    pub fn polled(&self) -> bool {
+        self.polled
+    }
+}
+
+pub fn key_listener(res: &mut Resource) -> anyhow::Result<KeyListenerResponse> {
+    let mut polled = false;
+
     if poll(std::time::Duration::from_millis(DELTA))? {
+        polled = true;
+
         let event = read()?;
         if quit_listener(&event) {
-            return Ok(true);
+            return Ok(KeyListenerResponse {
+                should_exit: true,
+                polled,
+            });
         }
         match res.entry_box().is_visible() {
             true => write_key_event(event, res)?,
@@ -224,7 +246,11 @@ pub fn key_listener(res: &mut Resource) -> anyhow::Result<bool> {
         }
     }
 
-    Ok(false)
+
+    Ok(KeyListenerResponse {
+        should_exit: false,
+        polled,
+    })
 }
 
 pub fn trigger_view_update(res: &mut Resource) {
@@ -261,6 +287,7 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             res.pointer_mut().toggle();
             res.entry_box_mut().toggle();
         }
+
         Event::Key(KeyEvent {
             code: KeyCode::Char('d'),
             modifiers: KeyModifiers::CONTROL,
@@ -272,28 +299,20 @@ fn normal_key_event(event: Event, res: &mut Resource) {
             };
             res.files_mut().close(id);
         }
+
         Event::Key(KeyEvent {
-            code: KeyCode::Left,
-            ..
-        })
-        | Event::Key(KeyEvent {
             code: KeyCode::Char('h'),
+            modifiers: KeyModifiers::CONTROL,
             ..
         }) => res.pointer_mut().set_cursor::<Files>(),
+
         Event::Key(KeyEvent {
-            code: KeyCode::Right,
-            ..
-        })
-        | Event::Key(KeyEvent {
             code: KeyCode::Char('l'),
+            modifiers: KeyModifiers::CONTROL,
             ..
         }) => res.pointer_mut().set_cursor::<View>(),
+
         Event::Key(KeyEvent {
-            code: KeyCode::Down,
-            modifiers: KeyModifiers::NONE,
-            ..
-        })
-        | Event::Key(KeyEvent {
             code: KeyCode::Char('j'),
             modifiers: KeyModifiers::NONE,
             ..
@@ -308,12 +327,8 @@ fn normal_key_event(event: Event, res: &mut Resource) {
                 }
             }
         }
+
         Event::Key(KeyEvent {
-            code: KeyCode::Up,
-            modifiers: KeyModifiers::NONE,
-            ..
-        })
-        | Event::Key(KeyEvent {
             code: KeyCode::Char('k'),
             modifiers: KeyModifiers::NONE,
             ..
@@ -328,12 +343,8 @@ fn normal_key_event(event: Event, res: &mut Resource) {
                 }
             }
         }
+
         Event::Key(KeyEvent {
-            code: KeyCode::Down,
-            modifiers: KeyModifiers::CONTROL,
-            ..
-        })
-        | Event::Key(KeyEvent {
             code: KeyCode::Char('j'),
             modifiers: KeyModifiers::CONTROL,
             ..
@@ -348,12 +359,8 @@ fn normal_key_event(event: Event, res: &mut Resource) {
                 }
             }
         }
+
         Event::Key(KeyEvent {
-            code: KeyCode::Up,
-            modifiers: KeyModifiers::CONTROL,
-            ..
-        })
-        | Event::Key(KeyEvent {
             code: KeyCode::Char('k'),
             modifiers: KeyModifiers::CONTROL,
             ..
@@ -368,6 +375,7 @@ fn normal_key_event(event: Event, res: &mut Resource) {
                 }
             }
         }
+
         _ => {}
     }
 }
