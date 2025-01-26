@@ -105,6 +105,8 @@ pub struct FileBuf {
     view_update: bool,
     lines: usize,
     buffer: Vec<String>,
+    max_scroll_limit: u16, // horizontal scroll
+    current_scroll: u16,
 }
 
 impl FileBuf {
@@ -119,6 +121,8 @@ impl FileBuf {
         let view = RefCell::new(Default::default());
         let view_update = true;
         let lines = 1;
+        let max_scroll_limit = 0;
+        let current_scroll = 0;
 
         log::trace!("Opening a file with path {}", path.display());
 
@@ -132,6 +136,8 @@ impl FileBuf {
             lines,
             view_update,
             buffer,
+            max_scroll_limit,
+            current_scroll,
         })
     }
 
@@ -154,13 +160,15 @@ impl FileBuf {
                 break;
             }
 
-            self.buffer.push(format!(
+            let line = format!(
                 "{:>6}|  {}",
                 self.lines,
                 buffer
                     .replace('\t', &"\u{000A0}".repeat(4))
                     .replace('\r', "")
-            ));
+            );
+
+            self.buffer.push(line);
 
             self.lines += 1;
             lines_to_read -= 1;
@@ -245,6 +253,7 @@ impl FileBuf {
             view[1] = end - start;
         }
     }
+
     pub fn bottom(&mut self) {
         let len = self.buffer.len();
         let (start, end) = (self.view.borrow()[0], self.view.borrow()[1]);
@@ -254,6 +263,22 @@ impl FileBuf {
             view[0] = start.saturating_add(diff);
             view[1] = end.saturating_add(diff);
         }
+    }
+
+    pub fn set_max_scroll_limit(&mut self, l: u16) {
+        self.max_scroll_limit = l;
+    }
+
+    pub fn scroll_next(&mut self) {
+        self.current_scroll = self.current_scroll.saturating_add(1).min(self.max_scroll_limit);
+    }
+
+    pub fn scroll_prev(&mut self) {
+        self.current_scroll = self.current_scroll.saturating_sub(1);
+    }
+
+    pub fn get_current_scroll(&self) -> (u16, u16) {
+        (self.current_scroll, 0)
     }
 
     #[inline]
