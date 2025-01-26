@@ -103,8 +103,7 @@ pub struct FileBuf {
     reader: Option<BufReader<File>>,
     view: RefCell<[usize; 2]>,
     view_update: bool,
-    lines: usize,
-    buffer: Vec<String>,
+    buffer: Vec<Box<str>>,
     max_scroll_limit: u16, // horizontal scroll
     current_scroll: u16,
 }
@@ -120,7 +119,6 @@ impl FileBuf {
         let buffer = Vec::new();
         let view = RefCell::new(Default::default());
         let view_update = true;
-        let lines = 1;
         let max_scroll_limit = 0;
         let current_scroll = 0;
 
@@ -133,7 +131,6 @@ impl FileBuf {
             path,
             reader,
             view,
-            lines,
             view_update,
             buffer,
             max_scroll_limit,
@@ -160,17 +157,13 @@ impl FileBuf {
                 break;
             }
 
-            let line = format!(
-                "{:>6}|  {}",
-                self.lines,
+            self.buffer.push(
                 buffer
                     .replace('\t', &"\u{000A0}".repeat(4))
                     .replace('\r', "")
+                    .into_boxed_str()
             );
 
-            self.buffer.push(line);
-
-            self.lines += 1;
             lines_to_read -= 1;
             buffer.clear();
         }
@@ -192,7 +185,7 @@ impl FileBuf {
     }
 
     // Only return lines that are visible on the screen.
-    pub fn buffer<'a>(&'a self, rect: Rect) -> (Vec<&'a str>, bool) {
+    pub fn buffer<'a>(&'a self, rect: Rect) -> (Vec<String>, bool) {
         if self.view_update {
             let mut view = self.view.borrow_mut();
             view[1] = view[0]
@@ -205,8 +198,9 @@ impl FileBuf {
         let lines = self
             .buffer
             .iter()
-            .map(String::as_str)
-            .collect::<Vec<&'a str>>();
+            .enumerate()
+            .map(|(i, s)| format!("{i:>6}|  {s}"))
+            .collect::<Vec<String>>();
 
         let slice = if len >= end && start < end {
             &lines[start..end]
@@ -220,7 +214,7 @@ impl FileBuf {
     // Replace the buffer with the error message and close the file reader.
     pub fn nullify(&mut self, message: String) {
         self.nulled = true;
-        self.buffer = vec![message];
+        self.buffer = vec![message.into_boxed_str()];
         let _ = self.reader.take();
         self.view = RefCell::new([0, 1]);
         self.is_tail = false;
