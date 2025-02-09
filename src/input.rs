@@ -246,7 +246,6 @@ pub fn key_listener(res: &mut Resource) -> anyhow::Result<KeyListenerResponse> {
         }
     }
 
-
     Ok(KeyListenerResponse {
         should_exit: false,
         polled,
@@ -301,16 +300,16 @@ fn normal_key_event(event: Event, res: &mut Resource) {
         }
 
         Event::Key(KeyEvent {
-            code: KeyCode::Char('h'),
-            modifiers: KeyModifiers::CONTROL,
+            code: KeyCode::Tab,
+            modifiers: KeyModifiers::NONE,
             ..
-        }) => res.pointer_mut().set_cursor::<Files>(),
-
-        Event::Key(KeyEvent {
-            code: KeyCode::Char('l'),
-            modifiers: KeyModifiers::CONTROL,
-            ..
-        }) => res.pointer_mut().set_cursor::<View>(),
+        }) => {
+            if res.pointer().cursor_at::<Files>() {
+                res.pointer_mut().set_cursor::<View>();
+            } else {
+                res.pointer_mut().set_cursor::<Files>();
+            }
+        }
 
         Event::Key(KeyEvent {
             code: KeyCode::Char('j'),
@@ -324,22 +323,6 @@ fn normal_key_event(event: Event, res: &mut Resource) {
                 let curr_index = res.file_list_state().index();
                 if let Some(curr_buff) = res.files_mut().get_file_buff_mut(curr_index) {
                     curr_buff.next();
-                }
-            }
-        }
-
-        Event::Key(KeyEvent {
-            code: KeyCode::Char('k'),
-            modifiers: KeyModifiers::NONE,
-            ..
-        }) => {
-            if res.pointer().cursor_at::<Files>() {
-                res.file_list_state_mut().prev();
-            }
-            if res.pointer().cursor_at::<View>() {
-                let curr_index = res.file_list_state().index();
-                if let Some(curr_buff) = res.files_mut().get_file_buff_mut(curr_index) {
-                    curr_buff.prev();
                 }
             }
         }
@@ -362,6 +345,22 @@ fn normal_key_event(event: Event, res: &mut Resource) {
 
         Event::Key(KeyEvent {
             code: KeyCode::Char('k'),
+            modifiers: KeyModifiers::NONE,
+            ..
+        }) => {
+            if res.pointer().cursor_at::<Files>() {
+                res.file_list_state_mut().prev();
+            }
+            if res.pointer().cursor_at::<View>() {
+                let curr_index = res.file_list_state().index();
+                if let Some(curr_buff) = res.files_mut().get_file_buff_mut(curr_index) {
+                    curr_buff.prev();
+                }
+            }
+        }
+
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('k'),
             modifiers: KeyModifiers::CONTROL,
             ..
         }) => {
@@ -372,6 +371,32 @@ fn normal_key_event(event: Event, res: &mut Resource) {
                 let curr_index = res.file_list_state().index();
                 if let Some(curr_buff) = res.files_mut().get_file_buff_mut(curr_index) {
                     curr_buff.top();
+                }
+            }
+        }
+
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('h'),
+            modifiers: KeyModifiers::NONE,
+            ..
+        }) => {
+            if res.pointer().cursor_at::<View>() {
+                let curr_index = res.file_list_state().index();
+                if let Some(curr_buff) = res.files_mut().get_file_buff_mut(curr_index) {
+                    curr_buff.scroll_prev();
+                }
+            }
+        }
+
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('l'),
+            modifiers: KeyModifiers::NONE,
+            ..
+        }) => {
+            if res.pointer().cursor_at::<View>() {
+                let curr_index = res.file_list_state().index();
+                if let Some(curr_buff) = res.files_mut().get_file_buff_mut(curr_index) {
+                    curr_buff.scroll_next();
                 }
             }
         }

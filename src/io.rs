@@ -145,11 +145,17 @@ impl FileBuf {
         }
 
         let Some(reader) = self.reader.as_mut() else {
+            // If the value is `None` then we don't have anymore file content to read.
             return Ok(());
         };
 
+        log::trace!("Updating file content: {}", self.path.display());
+
         let mut lines_to_read = self.view.borrow()[1];
         let mut buffer = String::new();
+        let mut max_scroll_limit = 0;
+
+        log::trace!("Reading {lines_to_read} lines from file {}", self.path.display());
 
         while lines_to_read > 0 {
             if reader.read_line(&mut buffer)? == 0 && !self.is_tail {
@@ -157,16 +163,26 @@ impl FileBuf {
                 break;
             }
 
+            let len = buffer.len() as u16;
+            max_scroll_limit = self.max_scroll_limit.max(len);
+
             self.buffer.push(
                 buffer
                     .replace('\t', &"\u{000A0}".repeat(4))
                     .replace('\r', "")
-                    .into_boxed_str()
+                    .into_boxed_str(),
             );
 
             lines_to_read -= 1;
             buffer.clear();
         }
+
+        self.set_max_scroll_limit(self.max_scroll_limit.max(max_scroll_limit));
+
+        log::trace!(
+            "Max scroll limit set after update: {}",
+            self.max_scroll_limit
+        );
 
         Ok(())
     }
@@ -195,9 +211,11 @@ impl FileBuf {
 
         let len = self.buffer.len();
         let (start, end) = (self.view.borrow()[0], self.view.borrow()[1]);
+        let current_scroll = self.current_scroll as usize;
         let lines = self
             .buffer
             .iter()
+            .map(|s| s.get(current_scroll..).unwrap_or_default())
             .enumerate()
             .map(|(i, s)| format!("{i:>6}|  {s}"))
             .collect::<Vec<String>>();
@@ -213,6 +231,7 @@ impl FileBuf {
 
     // Replace the buffer with the error message and close the file reader.
     pub fn nullify(&mut self, message: String) {
+        log::trace!("Nullifying file {}", self.path.display());
         self.nulled = true;
         self.buffer = vec![message.into_boxed_str()];
         let _ = self.reader.take();
@@ -264,15 +283,18 @@ impl FileBuf {
     }
 
     pub fn scroll_next(&mut self) {
-        self.current_scroll = self.current_scroll.saturating_add(1).min(self.max_scroll_limit);
+        self.current_scroll = self
+            .current_scroll
+            .saturating_add(1)
+            .min(self.max_scroll_limit);
+        log::debug!("current scroll: {}", self.current_scroll);
+        log::debug!("max scroll: {}", self.max_scroll_limit);
     }
 
     pub fn scroll_prev(&mut self) {
         self.current_scroll = self.current_scroll.saturating_sub(1);
-    }
-
-    pub fn get_current_scroll(&self) -> (u16, u16) {
-        (self.current_scroll, 0)
+        log::debug!("current scroll: {}", self.current_scroll);
+        log::debug!("max scroll: {}", self.max_scroll_limit);
     }
 
     #[inline]
